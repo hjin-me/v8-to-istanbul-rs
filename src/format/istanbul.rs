@@ -1,11 +1,11 @@
-use crate::format::MappingItem;
+use crate::format::{path_normalize, MappingItem};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sourcemap::SourceMap;
 use std::collections::HashMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use tokio::fs;
+use tracing::warn;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct IstanbulCov {
@@ -56,13 +56,17 @@ struct StatementMap {
 
 // nyc 生成覆盖率报告需要源代码
 // 这里使用 source-map 生成源代码
-pub async fn generate_source_code(source_map: &SourceMap, key: &str) -> Result<String> {
-    let tmp_dir = env::temp_dir().join(format!("source-map/{}", key));
+pub async fn generate_source_code(source_map: &SourceMap, output_dir: &str) -> Result<()> {
+    let tmp_dir = PathBuf::from(output_dir);
     // 递归创建 tmp_dir 目录
     fs::create_dir_all(&tmp_dir).await?;
     for (i, content) in source_map.source_contents().enumerate() {
         if let Some(p) = source_map.get_source(i as u32) {
             let path = tmp_dir.join(p);
+            if !path_normalize(&path.to_str().unwrap()).starts_with(output_dir) {
+                warn!("source 路径跳出了当前目录: {}", p);
+                continue;
+            }
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent).await?;
             }
@@ -73,7 +77,7 @@ pub async fn generate_source_code(source_map: &SourceMap, key: &str) -> Result<S
         }
     }
 
-    Ok(tmp_dir.to_str().unwrap().to_string())
+    Ok(())
 }
 
 pub fn from(vs: &Vec<MappingItem>, base_dir: &str) -> HashMap<String, IstanbulCov> {
@@ -100,21 +104,6 @@ pub fn from(vs: &Vec<MappingItem>, base_dir: &str) -> HashMap<String, IstanbulCo
         entry.s.insert(key.to_string(), x.count);
     }
     m
-}
-fn path_normalize(path: &str) -> String {
-    let mut r = vec![];
-    for x in path.split('/') {
-        match x {
-            "." => {}
-            ".." => {
-                r.pop();
-            }
-            _ => {
-                r.push(x);
-            }
-        }
-    }
-    r.join("/")
 }
 
 #[cfg(test)]

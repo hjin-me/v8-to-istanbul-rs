@@ -1,12 +1,12 @@
 mod format;
 mod translate;
 
-use crate::format::istanbul;
 use crate::format::istanbul::generate_source_code;
 use crate::format::script_coverage::{
-    build_coverage_range_tree, find_root, find_root_value_only, read_only, CoverRangeNode,
-    CoverageRange, ScriptCoverage,
+    build_coverage_range_tree, find_root_value_only, read_only, CoverRangeNode, CoverageRange,
+    ScriptCoverage,
 };
+use crate::format::{istanbul, path_normalize};
 use crate::translate::source_map_link;
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -14,10 +14,12 @@ use rayon::prelude::*;
 use regex::Regex;
 use sourcemap::SourceMap;
 use std::cell::RefCell;
+use std::env;
 use std::fs::File;
+use std::path::PathBuf;
 use std::rc::Rc;
 use tokio::fs;
-use tracing::{error, info, instrument, warn, Instrument};
+use tracing::{error, info, instrument};
 use tracing_subscriber::EnvFilter;
 
 /// Simple program to greet a person
@@ -29,6 +31,8 @@ struct Args {
     coverages: Vec<String>,
     #[arg(long)]
     filters: Vec<String>,
+    #[arg(long)]
+    output: String,
 }
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -38,12 +42,19 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     info!("start");
+    let output_dir = if !PathBuf::from(&args.output).is_absolute() {
+        let mut cwd = env::current_dir()?;
+        cwd.push(args.output);
+        path_normalize(cwd.to_str().unwrap())
+    } else {
+        args.output
+    };
     // 指定 ScriptCoverage 本地地址
     let sc_arr: Vec<ScriptCoverage> =
         serde_json::from_reader(File::open(args.coverages[0].clone())?)?;
     for sc in sc_arr {
         info!("处理脚本: {}", sc.url);
-        match handle_script_coverage(&sc).await {
+        match handle_script_coverage(&sc, &output_dir).await {
             Ok(s) => info!("{} 处理完成，结果在 {}", sc.url, s),
             Err(e) => error!("{} 失败 {}", sc.url, e),
         };
@@ -51,7 +62,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 #[instrument(skip(sc), fields(url = sc.url))]
-async fn handle_script_coverage(sc: &ScriptCoverage) -> Result<String> {
+async fn handle_script_coverage(sc: &ScriptCoverage, output_dir: &str) -> Result<String> {
     let uid = url_key(&sc.url);
     info!("下载sourcemap");
     // 指定 SourceMap 下载地址
@@ -62,10 +73,11 @@ async fn handle_script_coverage(sc: &ScriptCoverage) -> Result<String> {
     let sm = SourceMap::from_slice(&smb).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
     info!("生成源码目录");
     // 生成源码目录
-    let base_dir = generate_source_code(&sm, &uid).await?;
+    let base_dir = format!("{}/{}", output_dir, uid);
+    generate_source_code(&sm, &base_dir).await?;
     info!("生成中间文件");
     // 生成中间文件
-    let mut vm = source_map_link(&sc, &sm)
+    let vm = source_map_link(&sc, &sm)
         .await
         .map_err(|e| anyhow!("生成覆盖率中间数据失败, {}", e))?;
     let root = Rc::new(RefCell::new(CoverRangeNode::new(&CoverageRange {
@@ -101,9 +113,9 @@ async fn handle_script_coverage(sc: &ScriptCoverage) -> Result<String> {
     let report = istanbul::from(&vm, &base_dir);
     // 执行 nyc 生成报告
     info!("执行 nyc 生成报告");
-    fs::create_dir_all(format!("{}/.nyc_output/", base_dir)).await?;
+    fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
     fs::write(
-        format!("{}/.nyc_output/coverage.json", base_dir),
+        format!("{}/.nyc_output/{}.json", output_dir, uid),
         serde_json::to_string_pretty(&report)?,
     )
     .await?;

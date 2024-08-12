@@ -43,3 +43,18 @@ pub struct MappingItem<'a> {
 //     // Convert the result to a hexadecimal string
 //     hex::encode(result)
 // }
+pub fn path_normalize(path: &str) -> String {
+    let mut r = vec![];
+    for x in path.split('/') {
+        match x {
+            "." => {}
+            ".." => {
+                r.pop();
+            }
+            _ => {
+                r.push(x);
+            }
+        }
+    }
+    r.join("/")
+}
