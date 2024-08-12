@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
-use sourcemap::SourceMap;
 
 pub mod istanbul;
 pub mod script_coverage;
@@ -26,22 +24,22 @@ pub struct MappingItem<'a> {
     pub idx: usize,
 }
 
-pub fn source_map_key(source_map: &SourceMap) -> String {
-    let input_string = source_map
-        .sources()
-        .map(|source| source.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
-    // Create a Sha1 object
-    let mut hasher = Sha1::new();
-
-    // Write the input data to the hasher
-    hasher.update(input_string);
-
-    // Finalize the hash and obtain the result as a byte array
-    let result = hasher.finalize();
-
-    // Convert the result to a hexadecimal string
-    hex::encode(result)
-}
+// pub fn source_map_key(source_map: &SourceMap) -> String {
+//     let input_string = source_map
+//         .sources()
+//         .map(|source| source.to_string())
+//         .collect::<Vec<String>>()
+//         .join(",");
+//
+//     // Create a Sha1 object
+//     let mut hasher = Sha1::new();
+//
+//     // Write the input data to the hasher
+//     hasher.update(input_string);
+//
+//     // Finalize the hash and obtain the result as a byte array
+//     let result = hasher.finalize();
+//
+//     // Convert the result to a hexadecimal string
+//     hex::encode(result)
+// }

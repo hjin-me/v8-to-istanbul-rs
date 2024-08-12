@@ -1,4 +1,4 @@
-use crate::format::{source_map_key, MappingItem};
+use crate::format::MappingItem;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sourcemap::SourceMap;
@@ -56,8 +56,7 @@ struct StatementMap {
 
 // nyc 生成覆盖率报告需要源代码
 // 这里使用 source-map 生成源代码
-pub async fn generate_source_code(source_map: &SourceMap) -> Result<String> {
-    let key = source_map_key(source_map);
+pub async fn generate_source_code(source_map: &SourceMap, key: &str) -> Result<String> {
     let tmp_dir = env::temp_dir().join(format!("source-map/{}", key));
     // 递归创建 tmp_dir 目录
     fs::create_dir_all(&tmp_dir).await?;
@@ -66,6 +65,9 @@ pub async fn generate_source_code(source_map: &SourceMap) -> Result<String> {
             let path = tmp_dir.join(p);
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent).await?;
+            }
+            if path.starts_with("webpack:") {
+                continue;
             }
             fs::write(&path, content.unwrap_or_default()).await?;
         }
@@ -122,9 +124,8 @@ mod test {
 
     #[tokio::test]
     async fn test_source_code() -> Result<()> {
-        let source_map =
-            SourceMap::from_slice(include_bytes!("../../tests/base/main.min.js.map"))?;
-        dbg!(generate_source_code(&source_map).await?);
+        let source_map = SourceMap::from_slice(include_bytes!("../../tests/base/main.min.js.map"))?;
+        dbg!(generate_source_code(&source_map, "test-abc").await?);
 
         Ok(())
     }
@@ -136,14 +137,8 @@ mod test {
             path_normalize(a1.join(a2).as_path().to_str().unwrap()),
             "/abc/xyz".to_string()
         );
-        assert_eq!(
-            path_normalize("./abc"),
-            "abc".to_string()
-        );
-        assert_eq!(
-            path_normalize("./abc/.."),
-            "".to_string()
-        );
+        assert_eq!(path_normalize("./abc"), "abc".to_string());
+        assert_eq!(path_normalize("./abc/.."), "".to_string());
         // dbg!(a1.clone().join(a2.clone()));
         // dbg!(a1.push(a2));
         // dbg!(a1.canonicalize().unwrap());

@@ -1,5 +1,6 @@
 use crate::format::script_coverage::ScriptCoverage;
 use crate::format::MappingItem;
+use anyhow::{anyhow, Result};
 use sourcemap::SourceMap;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -8,7 +9,7 @@ use std::path::Path;
 pub async fn source_map_link<'a>(
     script_coverage: &'a ScriptCoverage,
     source_map: &'a SourceMap,
-) -> Vec<MappingItem<'a>> {
+) -> Result<Vec<MappingItem<'a>>> {
     let mut generated_source_sect = vec![0];
     for s in script_coverage.source.split('\n') {
         let last = generated_source_sect.last().unwrap();
@@ -21,7 +22,7 @@ pub async fn source_map_link<'a>(
             s,
             source_map
                 .get_source_contents(i as u32)
-                .unwrap()
+                .ok_or(anyhow!("source contents not found"))?
                 .split('\n')
                 .map(|s| s.len() as u32)
                 .collect(),
@@ -106,10 +107,15 @@ pub async fn source_map_link<'a>(
             sector_map[last_idx[0]].original_column,
         );
         let (cross_line, lines_length) = match line_length_map.get(source) {
-            Some(v) => (
-                start_column >= v[start_line as usize], // 当前 token 起始位置已经超过行的长度
-                v,
-            ),
+            Some(v) => {
+                if v.len() <= start_line as usize {
+                    return Err(anyhow!("行坐标比代码行数更大, {}>{}", start_line, v.len()));
+                }
+                (
+                    start_column >= v[start_line as usize], // 当前 token 起始位置已经超过行的长度
+                    v,
+                )
+            }
             None => {
                 // dbg!(
                 //     source,
@@ -206,7 +212,7 @@ pub async fn source_map_link<'a>(
         for idx in last_idx.iter() {
             match cross_line {
                 true => {
-                    let mut prev_i = lines_length.len();
+                    let mut prev_i = lines_length.len() - 1;
                     while prev_i >= start_line as usize && lines_length[prev_i] == 0 {
                         prev_i -= 1;
                     }
@@ -222,10 +228,10 @@ pub async fn source_map_link<'a>(
         }
     }
     // dbg!(&sector_map);
-    sector_map
+    Ok(sector_map
         .into_iter()
         .filter(|s| is_file_extension_allowed(s.source, &["js", "jsx", "ts", "tsx"]))
-        .collect()
+        .collect())
 }
 
 fn is_file_extension_allowed<P: AsRef<Path>>(path: P, file_extensions: &[&str]) -> bool {
@@ -250,7 +256,7 @@ mod test {
         ))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map = SourceMap::from_slice(include_bytes!("../tests/base/main.min.js.map"))?;
-        let r = source_map_link(&script_coverage[0], &source_map).await;
+        let r = source_map_link(&script_coverage[0], &source_map).await?;
         // tokio::fs::write(
         //     "tests/base/source_map_link.json",
         //     serde_json::to_string_pretty(&r)?,
@@ -270,7 +276,7 @@ mod test {
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map =
             SourceMap::from_slice(include_bytes!("../tests/jsx/main.f272a57c.chunk.js.map"))?;
-        let r = source_map_link(&script_coverage[0], &source_map).await;
+        let r = source_map_link(&script_coverage[0], &source_map).await?;
 
         // tokio::fs::write(
         //     "tests/jsx/source_map_link.json",
