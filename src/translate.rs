@@ -146,6 +146,8 @@ pub async fn source_map_link<'a>(
                         prev_i -= 1;
                     }
                     // dbg!(prev_i, lines_length);
+                    sector_map[*idx].original_line = sector_map[*idx].original_line + 1;
+                    sector_map[*idx].original_column = 0;
                     sector_map[*idx].last_original_line = prev_i as u32;
                     sector_map[*idx].last_original_column = lines_length[prev_i] - 1;
                 }
@@ -167,6 +169,8 @@ pub async fn source_map_link<'a>(
                             sector_map[*idx].last_original_column = lines_length[prev_i] - 1;
                         }
                     }
+                    sector_map[*idx].original_line = sector_map[*idx].original_line + 1;
+                    sector_map[*idx].original_column = 0;
                 }
                 (false, true) => {
                     sector_map[*idx].last_original_line = sector_map[*idx].original_line;
@@ -244,9 +248,8 @@ mod test {
         let script_coverage = serde_json::from_str::<Vec<ScriptCoverage>>(include_str!(
             "../tests/base/v8-coverage.json"
         ))
-            .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
-        let source_map =
-            SourceMap::from_slice(include_bytes!("../tests/base/main.min.js.map"))?;
+        .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
+        let source_map = SourceMap::from_slice(include_bytes!("../tests/base/main.min.js.map"))?;
         let r = source_map_link(&script_coverage[0], &source_map).await;
         // tokio::fs::write(
         //     "tests/base/source_map_link.json",
@@ -264,7 +267,7 @@ mod test {
         let script_coverage = serde_json::from_str::<Vec<ScriptCoverage>>(include_str!(
             "../tests/jsx/v8-coverage.json"
         ))
-            .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
+        .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map =
             SourceMap::from_slice(include_bytes!("../tests/jsx/main.f272a57c.chunk.js.map"))?;
         let r = source_map_link(&script_coverage[0], &source_map).await;
