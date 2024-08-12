@@ -1,0 +1,91 @@
+[
+  {
+    "url": "http://127.0.0.1:8080/src/main.min.js",
+    "scriptId": "4",
+    "source": "(()=>{(()=>{let n=Math.random();function f(){console.log(\"f1\")}n>.5&&f();let o=function(){console.log(\"f3\")};n<.5&&(function(){console.log(\"f2\")}(),o()),n>.7&&o(),o(),o(),o(),setTimeout(()=>{console.log(\"timeout\")},9999999)})();})();\n//# sourceMappingURL=main.min.js.map\n",
+    "functions": [
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 271,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1,
+            "endOffset": 229,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 7,
+            "endOffset": 224,
+            "count": 1
+          },
+          {
+            "startOffset": 113,
+            "endOffset": 152,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 32,
+            "endOffset": 63,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "o",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 79,
+            "endOffset": 108,
+            "count": 4
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 116,
+            "endOffset": 145,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 186,
+            "endOffset": 214,
+            "count": 0
+          }
+        ]
+      }
+    ]
+  }
+]

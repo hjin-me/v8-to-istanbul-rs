@@ -1,0 +1,201 @@
+[
+  {
+    "url": "http://localhost:3000/main.f272a57c.chunk.js",
+    "scriptId": "7",
+    "source": "\"use strict\";(globalThis.webpackChunkreact_template=globalThis.webpackChunkreact_template||[]).push([[179],{963:(e,t,s)=>{s.r(t),s(626);var o=s(982),n=s(128),r=s(142),d=s(871);let i=()=>{let[e,t]=(0,n.useState)(\"\");return(0,d.jsxs)(d.Fragment,{children:[(0,d.jsx)(\"input\",{onChange:e=>{t(e.target.value)}}),(0,d.jsxs)(\"p\",{className:\"Hello_p__hiSbQ\",children:[\"hello \",e]})]})};var l=s(692),a=s(979),h=s.n(a);class u{constructor(e){h()(this,\"id\",Math.random()),h()(this,\"title\",void 0),h()(this,\"done\",!1),this.title=e,(0,o.makeAutoObservable)(this)}toggle(){this.done=!this.done}}class c{get unfinishedTodoCount(){return this.todos.filter(e=>!e.done).length}constructor(){h()(this,\"todos\",[]),(0,o.makeAutoObservable)(this)}addTodo(e){this.todos.push(new u(e))}}let x=(0,l.observer)(({todo:e})=>(0,d.jsxs)(\"li\",{children:[(0,d.jsx)(\"input\",{type:\"checkbox\",checked:e.done,onChange:()=>{e.toggle()}}),e.title]})),j=(0,l.observer)(()=>{let[e]=(0,n.useState)(()=>new c);return(0,d.jsxs)(d.Fragment,{children:[(0,d.jsxs)(\"form\",{onSubmit:t=>{t.preventDefault(),e.addTodo(t.target.todo.value)},children:[\"New Todo: \",(0,d.jsx)(\"input\",{type:\"text\",name:\"todo\"}),\" \",(0,d.jsx)(\"button\",{type:\"submit\",children:\"Add\"})]}),(0,d.jsx)(\"ul\",{children:e.todos.map(e=>(0,d.jsx)(x,{todo:e},e.id))}),\"Tasks left: \",e.unfinishedTodoCount]})});(0,r.createRoot)(document.querySelector(\"#root\")).render((0,d.jsx)(n.StrictMode,{children:(0,d.jsx)(()=>(0,d.jsxs)(d.Fragment,{children:[(0,d.jsx)(i,{}),(0,d.jsx)(j,{})]}),{})}))}}]);\n//# sourceMappingURL=main.f272a57c.chunk.js.map",
+    "functions": [
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 1559,
+            "count": 1
+          },
+          {
+            "startOffset": 89,
+            "endOffset": 93,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "963",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 112,
+            "endOffset": 1507,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "i",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 182,
+            "endOffset": 377,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "onChange",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 282,
+            "endOffset": 304,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "u",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 417,
+            "endOffset": 550,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "toggle",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 550,
+            "endOffset": 580,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "get unfinishedTodoCount",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 589,
+            "endOffset": 659,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 640,
+            "endOffset": 650,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "c",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 659,
+            "endOffset": 725,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "addTodo",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 725,
+            "endOffset": 762,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 784,
+            "endOffset": 911,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "onChange",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 882,
+            "endOffset": 898,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 930,
+            "endOffset": 1326,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 957,
+            "endOffset": 966,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "onSubmit",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1035,
+            "endOffset": 1089,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1253,
+            "endOffset": 1282,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1428,
+            "endOffset": 1499,
+            "count": 1
+          }
+        ]
+      }
+    ]
+  }
+]
