@@ -11,7 +11,7 @@ use crate::format::{istanbul, path_normalize};
 use crate::statement::{build_statements, Statement};
 use crate::translate::source_map_link;
 use anyhow::{anyhow, Result};
-use clap::Parser;
+use clap::{Args, Parser, Subcommand};
 use glob::glob;
 use rayon::prelude::*;
 use regex::Regex;
@@ -28,59 +28,76 @@ use tokio::fs;
 use tracing::{error, info, instrument, trace, warn};
 use tracing_subscriber::EnvFilter;
 
-/// Simple program to greet a person
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(version, about, long_about = None)]
-struct Args {
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+#[derive(Subcommand)]
+enum Commands {
+    /// Adds files to myapp
+    Convert(ConvertArgs),
+}
+#[derive(Args)]
+struct ConvertArgs {
     #[arg(long)]
     pattern: String,
-    #[arg(long)]
-    coverages: Vec<String>,
     #[arg(long)]
     filters: Vec<String>,
     #[arg(long)]
     output: String,
-    #[arg(long, default_value = "false")]
-    merge: bool,
+    // #[arg(long, default_value = "false")]
+    // merge: bool,
 }
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
-    let args = Args::parse();
+    let cli = Cli::parse();
 
-    info!("start");
-    let all_script_coverage_filess = glob_abs(&args.pattern)?;
-    info!(
-        "待处理的覆盖率报告文件列表 {:?}",
-        &all_script_coverage_filess
-    );
-    let mut all_script_coverages = HashMap::new();
-    for p in all_script_coverage_filess {
-        trace!("处理文件 {}", p.to_str().unwrap());
-        let mut s = String::new();
-        File::open(&p)?.read_to_string(&mut s)?;
-        let sc_arr: Vec<ScriptCoverage> = serde_json::from_str(&s)?;
-        all_script_coverages.insert(p.to_str().unwrap().to_string(), sc_arr);
-    }
+    // You can check for the existence of subcommands, and if found use their
+    // matches just as you would the top level cmd
+    match &cli.command {
+        Commands::Convert(args) => {
+            info!("start");
+            let all_script_coverage_filess = glob_abs(&args.pattern)?;
+            info!(
+                "待处理的覆盖率报告文件列表 {:?}",
+                &all_script_coverage_filess
+            );
+            let mut all_script_coverages = HashMap::new();
+            for p in all_script_coverage_filess {
+                trace!("处理文件 {}", p.to_str().unwrap());
+                let mut s = String::new();
+                File::open(&p)?.read_to_string(&mut s)?;
+                let sc_arr: Vec<ScriptCoverage> = serde_json::from_str(&s)?;
+                all_script_coverages.insert(p.to_str().unwrap().to_string(), sc_arr);
+            }
 
-    let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
+            let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
 
-    // 先把 script coverage 和 source map 这两批静态且重复的文件处理好
-    let sc_arr = all_script_coverages
-        .values()
-        .flatten()
-        .collect::<Vec<&ScriptCoverage>>();
-    let statement_data = build_statements(&sc_arr, &args.filters, &output_dir).await?;
+            // 先把 script coverage 和 source map 这两批静态且重复的文件处理好
+            let sc_arr = all_script_coverages
+                .values()
+                .flatten()
+                .collect::<Vec<&ScriptCoverage>>();
+            let statement_data = build_statements(&sc_arr, &args.filters, &output_dir).await?;
 
-    for (test_name, sc_arr) in all_script_coverages {
-        for sc in sc_arr {
-            info!("处理脚本: {}", sc.url);
-            match handle_script_coverage(&statement_data, &test_name, &sc, &output_dir).await {
-                Ok(_) => info!("{} 处理完成", sc.url),
-                Err(e) => error!("{} 失败 {}", sc.url, e),
-            };
+            for (test_name, sc_arr) in all_script_coverages {
+                for sc in sc_arr {
+                    info!("处理脚本: {}", sc.url);
+                    match handle_script_coverage(&statement_data, &test_name, &sc, &output_dir)
+                        .await
+                    {
+                        Ok(_) => info!("{} 处理完成", sc.url),
+                        Err(e) => error!("{} 失败 {}", sc.url, e),
+                    };
+                }
+            }
         }
     }
     Ok(())
