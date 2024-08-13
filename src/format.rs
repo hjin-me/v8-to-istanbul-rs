@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod istanbul;
 pub mod script_coverage;
+mod lcov;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MappingItem<'a> {

@@ -33,6 +33,8 @@ struct Args {
     filters: Vec<String>,
     #[arg(long)]
     output: String,
+    #[arg(long, default_value = "false")]
+    merge: bool,
 }
 #[tokio::main]
 async fn main() -> Result<()> {

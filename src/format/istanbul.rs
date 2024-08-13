@@ -120,7 +120,7 @@ mod test {
     }
     #[test]
     fn test_join() {
-        let mut a1 = PathBuf::from("/abc/def");
+        let a1 = PathBuf::from("/abc/def");
         let a2 = PathBuf::from("../xyz");
         assert_eq!(
             path_normalize(a1.join(a2).as_path().to_str().unwrap()),
