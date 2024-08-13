@@ -74,10 +74,10 @@ async fn main() -> Result<()> {
         .collect::<Vec<&ScriptCoverage>>();
     let statement_data = build_statements(&sc_arr, &args.filters, &output_dir).await?;
 
-    for (_, sc_arr) in all_script_coverages {
+    for (test_name, sc_arr) in all_script_coverages {
         for sc in sc_arr {
             info!("处理脚本: {}", sc.url);
-            match handle_script_coverage(&statement_data, &sc, &output_dir).await {
+            match handle_script_coverage(&statement_data, &test_name, &sc, &output_dir).await {
                 Ok(_) => info!("{} 处理完成", sc.url),
                 Err(e) => error!("{} 失败 {}", sc.url, e),
             };
@@ -88,10 +88,11 @@ async fn main() -> Result<()> {
 #[instrument(skip_all, fields(url = sc.url))]
 async fn handle_script_coverage(
     sd: &HashMap<String, Statement>,
+    sc_name: &str,
     sc: &ScriptCoverage,
     output_dir: &str,
 ) -> Result<()> {
-    let uid = url_key(&sc.url);
+    let uid = url_key(&sc_name);
 
     let statement = match sd.get(&sc.url) {
         Some(s) => s,
