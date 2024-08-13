@@ -84,7 +84,7 @@ pub fn from(vs: &Vec<MappingItem>, base_dir: &str) -> HashMap<String, IstanbulCo
     let base = Path::new(base_dir);
     let mut m = HashMap::new();
     for (key, x) in vs.iter().enumerate() {
-        let abs_path = path_normalize(base.join(x.source).to_str().unwrap_or_default());
+        let abs_path = path_normalize(base.join(&x.source).to_str().unwrap_or_default());
         let mut ic = IstanbulCov::default();
         ic.path = abs_path.to_string();
         let entry = m.entry(ic.path.clone()).or_insert(ic);

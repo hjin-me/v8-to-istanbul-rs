@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 pub mod istanbul;
-pub mod script_coverage;
 mod lcov;
+pub mod script_coverage;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MappingItem<'a> {
+pub struct MappingItem {
     #[serde(rename = "s")]
-    pub source: &'a str,
+    pub source: String,
     #[serde(rename = "gs")]
     pub generated_column: u32,
     #[serde(rename = "ge")]

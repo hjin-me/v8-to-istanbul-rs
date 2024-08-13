@@ -7,11 +7,11 @@ use std::collections::HashMap;
 use std::path::Path;
 
 pub async fn source_map_link<'a>(
-    script_coverage: &'a ScriptCoverage,
+    source: &'a str,
     source_map: &'a SourceMap,
-) -> Result<Vec<MappingItem<'a>>> {
+) -> Result<Vec<MappingItem>> {
     let mut generated_source_sect = vec![0];
-    for s in script_coverage.source.split('\n') {
+    for s in source.split('\n') {
         let last = generated_source_sect.last().unwrap();
         generated_source_sect.push(last + s.chars().count() as u32 + 1)
     }
@@ -43,7 +43,7 @@ pub async fn source_map_link<'a>(
                 start
             };
             let m = MappingItem {
-                source,
+                source: source.to_string(),
                 generated_column: start,
                 last_generated_column: next,
                 original_line: x.get_src_line(),
@@ -62,7 +62,7 @@ pub async fn source_map_link<'a>(
         let end = generated_source_sect[line as usize + 1] - 1;
         let source = x.get_source().unwrap_or_default();
         let m = MappingItem {
-            source,
+            source: source.to_string(),
             generated_column: start,
             last_generated_column: end,
             original_line: x.get_src_line(),
@@ -76,7 +76,7 @@ pub async fn source_map_link<'a>(
     }
 
     sector_map.sort_unstable_by(|a, b| {
-        let n = a.source.cmp(b.source);
+        let n = a.source.cmp(&b.source);
         if n != Ordering::Equal {
             return n;
         }
@@ -102,7 +102,7 @@ pub async fn source_map_link<'a>(
         }
         // 收集一下待处理的状态
         let (source, start_line, start_column) = (
-            sector_map[last_idx[0]].source,
+            sector_map[last_idx[0]].source.as_str(),
             sector_map[last_idx[0]].original_line,
             sector_map[last_idx[0]].original_column,
         );
@@ -127,7 +127,7 @@ pub async fn source_map_link<'a>(
             }
         };
         let (next_source, next_start_line, next_start_column) = (
-            sector_map[i].source,
+            sector_map[i].source.as_str(),
             sector_map[i].original_line,
             sector_map[i].original_column,
         );
@@ -200,7 +200,7 @@ pub async fn source_map_link<'a>(
 
     // 收集一下待处理的状态
     let (source, start_line, start_column) = (
-        sector_map[last_idx[0]].source,
+        sector_map[last_idx[0]].source.as_str(),
         sector_map[last_idx[0]].original_line,
         sector_map[last_idx[0]].original_column,
     );
@@ -230,7 +230,7 @@ pub async fn source_map_link<'a>(
     // dbg!(&sector_map);
     Ok(sector_map
         .into_iter()
-        .filter(|s| is_file_extension_allowed(s.source, &["js", "jsx", "ts", "tsx"]))
+        .filter(|s| is_file_extension_allowed(s.source.as_str(), &["js", "jsx", "ts", "tsx"]))
         .collect())
 }
 
@@ -256,7 +256,7 @@ mod test {
         ))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map = SourceMap::from_slice(include_bytes!("../tests/base/main.min.js.map"))?;
-        let r = source_map_link(&script_coverage[0], &source_map).await?;
+        let r = source_map_link(&script_coverage[0].source, &source_map).await?;
         // tokio::fs::write(
         //     "tests/base/source_map_link.json",
         //     serde_json::to_string_pretty(&r)?,
@@ -276,7 +276,7 @@ mod test {
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map =
             SourceMap::from_slice(include_bytes!("../tests/jsx/main.f272a57c.chunk.js.map"))?;
-        let r = source_map_link(&script_coverage[0], &source_map).await?;
+        let r = source_map_link(&script_coverage[0].source, &source_map).await?;
 
         // tokio::fs::write(
         //     "tests/jsx/source_map_link.json",
