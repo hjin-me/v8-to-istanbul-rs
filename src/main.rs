@@ -48,8 +48,8 @@ struct ConvertArgs {
     filters: Vec<String>,
     #[arg(long)]
     output: String,
-    // #[arg(long, default_value = "false")]
-    // merge: bool,
+    #[arg(long, default_value = "false")]
+    merge: bool,
 }
 
 #[tokio::main]
@@ -85,7 +85,8 @@ async fn main() -> Result<()> {
                 .values()
                 .flatten()
                 .collect::<Vec<&ScriptCoverage>>();
-            let statement_data = build_statements(&sc_arr, &args.filters, &output_dir).await?;
+            let statement_data =
+                build_statements(&sc_arr, &args.filters, &output_dir, args.merge).await?;
 
             for (test_name, sc_arr) in all_script_coverages {
                 for sc in sc_arr {
@@ -93,7 +94,7 @@ async fn main() -> Result<()> {
                     match handle_script_coverage(&statement_data, &test_name, &sc, &output_dir)
                         .await
                     {
-                        Ok(_) => info!("{} 处理完成", sc.url),
+                        Ok(_) => {}
                         Err(e) => error!("{} 失败 {}", sc.url, e),
                     };
                 }
@@ -123,10 +124,10 @@ async fn handle_script_coverage(
         end_offset: sc.source.len() as u32,
         count: 0,
     })));
-    info!("构造覆盖率搜索树");
+    trace!("构造覆盖率搜索树");
     build_coverage_range_tree(root.clone(), &sc.functions);
     let cov_tree = read_only(root);
-    info!("搜索覆盖率");
+    trace!("搜索覆盖率");
     let vm = statement
         .mapping
         .par_iter()
@@ -145,13 +146,13 @@ async fn handle_script_coverage(
             m
         })
         .collect();
-    info!("搜索覆盖率完成");
+    trace!("搜索覆盖率完成");
 
     // 生成 istanbul 文件
-    info!("生成 istanbul 文件");
+    trace!("生成 istanbul 文件");
     let report = istanbul::from(&vm, &statement.code_dir);
     // 执行 nyc 生成报告
-    info!("执行 nyc 生成报告");
+    trace!("执行 nyc 生成报告");
     fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
     fs::write(
         format!("{}/.nyc_output/{}.json", output_dir, uid),

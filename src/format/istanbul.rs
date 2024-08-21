@@ -62,6 +62,12 @@ pub async fn generate_source_code(source_map: &SourceMap, output_dir: &str) -> R
     fs::create_dir_all(&tmp_dir).await?;
     for (i, content) in source_map.source_contents().enumerate() {
         if let Some(p) = source_map.get_source(i as u32) {
+            if p.starts_with("external script ")
+                || p.starts_with("webpack")
+                || p.contains("node_modules")
+            {
+                continue;
+            }
             let path = tmp_dir.join(p);
             if !path_normalize(&path.to_str().unwrap()).starts_with(output_dir) {
                 warn!("source 路径跳出了当前目录: {}", p);
@@ -69,9 +75,6 @@ pub async fn generate_source_code(source_map: &SourceMap, output_dir: &str) -> R
             }
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent).await?;
-            }
-            if path.starts_with("webpack:") {
-                continue;
             }
             fs::write(&path, content.unwrap_or_default()).await?;
         }

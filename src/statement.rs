@@ -22,6 +22,7 @@ pub async fn build_statements(
     script_coverages: &Vec<&ScriptCoverage>,
     filters: &Vec<String>,
     output_dir: &str,
+    merge: bool,
 ) -> Result<HashMap<String, Statement>> {
     let mut source_map_url = HashMap::new();
     for &sc in script_coverages {
@@ -31,7 +32,7 @@ pub async fn build_statements(
     }
     let mut cache_data = HashMap::new();
     for (url, source) in source_map_url {
-        match gen_cache_data(url, source, output_dir).await {
+        match gen_cache_data(url, source, output_dir, merge).await {
             Ok(d) => {
                 cache_data.insert(url.to_string(), d);
             }
@@ -47,9 +48,10 @@ async fn gen_cache_data<'a>(
     url: &'a str,
     source: &'a str,
     output_dir: &'a str,
+    merge: bool,
 ) -> Result<Statement> {
     let uid = url_key(&url);
-    trace!("下载source map 文件");
+    info!("下载source map 文件 {}.map", &url);
     let smb = reqwest::get(&format!("{}.map", &url))
         .await?
         .bytes()
@@ -57,7 +59,11 @@ async fn gen_cache_data<'a>(
     trace!("解码 source map");
     let sm = SourceMap::from_slice(&smb).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
     // 生成源码目录
-    let base_dir = format!("{}/{}", output_dir, uid);
+    let base_dir = if merge {
+        output_dir.to_string()
+    } else {
+        format!("{}/{}", output_dir, uid)
+    };
     trace!("生成源码目录 {}", base_dir);
     generate_source_code(&sm, &base_dir).await?;
     // 生成中间文件
