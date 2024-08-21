@@ -4,8 +4,8 @@ mod translate;
 
 use crate::format::istanbul::generate_source_code;
 use crate::format::script_coverage::{
-    build_coverage_range_tree, find_root_value_only, read_only, CoverRangeNode, CoverageRange,
-    ScriptCoverage,
+    build_coverage_range_tree, find_root_value_only, normalize_script_coverages, read_only,
+    CoverRangeNode, CoverageRange, ScriptCoverage, ScriptCoverageRaw,
 };
 use crate::format::{istanbul, path_normalize};
 use crate::statement::{build_statements, Statement};
@@ -74,7 +74,9 @@ async fn main() -> Result<()> {
                 trace!("处理文件 {}", p.to_str().unwrap());
                 let mut s = String::new();
                 File::open(&p)?.read_to_string(&mut s)?;
-                let sc_arr: Vec<ScriptCoverage> = serde_json::from_str(&s)?;
+                let sc_arr: Vec<ScriptCoverageRaw> = serde_json::from_str(&s)
+                    .map_err(|e| anyhow!("解析{:?}出错, {}", p.to_str(), e))?;
+                let sc_arr = normalize_script_coverages(&sc_arr, &args.filters).await?;
                 all_script_coverages.insert(p.to_str().unwrap().to_string(), sc_arr);
             }
 
@@ -85,8 +87,7 @@ async fn main() -> Result<()> {
                 .values()
                 .flatten()
                 .collect::<Vec<&ScriptCoverage>>();
-            let statement_data =
-                build_statements(&sc_arr, &args.filters, &output_dir, args.merge).await?;
+            let statement_data = build_statements(&sc_arr, &output_dir, args.merge).await?;
 
             for (test_name, sc_arr) in all_script_coverages {
                 for sc in sc_arr {

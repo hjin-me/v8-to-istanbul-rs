@@ -20,15 +20,12 @@ pub struct Statement {
 
 pub async fn build_statements(
     script_coverages: &Vec<&ScriptCoverage>,
-    filters: &Vec<String>,
     output_dir: &str,
     merge: bool,
 ) -> Result<HashMap<String, Statement>> {
     let mut source_map_url = HashMap::new();
     for &sc in script_coverages {
-        if filters.len() > 0 && filters.iter().find(|&f| sc.url.contains(f)).is_some() {
-            source_map_url.insert(&sc.url, &sc.source);
-        }
+        source_map_url.insert(&sc.url, &sc.source);
     }
     let mut cache_data = HashMap::new();
     for (url, source) in source_map_url {

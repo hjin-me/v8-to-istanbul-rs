@@ -1,9 +1,16 @@
+use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use tracing::warn;
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct ScriptCoverageRaw {
+    pub url: String,
+    pub source: Option<String>,
+    pub functions: Vec<FunctionCoverage>,
+}
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScriptCoverage {
     pub url: String,
@@ -125,6 +132,40 @@ pub fn find_root_value_only(root: &CoverRangeNodeRead, range: &CoverageRange) ->
         }
     }
     Some(root.value)
+}
+
+pub async fn normalize_script_coverages(
+    script_coverages: &Vec<ScriptCoverageRaw>,
+    filters: &Vec<String>,
+) -> Result<Vec<ScriptCoverage>> {
+    let mut r = Vec::new();
+    for sc in script_coverages {
+        if (filters.len() > 0 && filters.iter().find(|&f| sc.url.contains(f)).is_some())
+            || filters.is_empty()
+        {
+            let v = if let Some(s) = sc.source.clone() {
+                ScriptCoverage {
+                    url: sc.url.clone(),
+                    source: s.clone(),
+                    functions: sc.functions.clone(),
+                }
+            } else {
+                let s = reqwest::get(&sc.url)
+                    .await
+                    .map_err(|e| anyhow!("请求URL失败: {} {}", &sc.url, e))?
+                    .text()
+                    .await
+                    .map_err(|e| anyhow!("请求URL失败: {} {}", &sc.url, e))?;
+                ScriptCoverage {
+                    url: sc.url.clone(),
+                    source: s,
+                    functions: sc.functions.clone(),
+                }
+            };
+            r.push(v)
+        }
+    }
+    Ok(r)
 }
 
 #[cfg(test)]
