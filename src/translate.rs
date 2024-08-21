@@ -1,4 +1,3 @@
-use crate::format::script_coverage::ScriptCoverage;
 use crate::format::MappingItem;
 use anyhow::{anyhow, Result};
 use sourcemap::SourceMap;
@@ -251,7 +250,7 @@ mod test {
 
     #[tokio::test]
     async fn test_source_map_link_base() -> Result<()> {
-        let script_coverage = serde_json::from_str::<Vec<ScriptCoverage>>(include_str!(
+        let script_coverage = serde_json::from_str::<Vec<crate::format::script_coverage::ScriptCoverage>>(include_str!(
             "../tests/base/v8-coverage.json"
         ))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
@@ -270,7 +269,7 @@ mod test {
     }
     #[tokio::test]
     async fn test_source_map_link_jsx() -> Result<()> {
-        let script_coverage = serde_json::from_str::<Vec<ScriptCoverage>>(include_str!(
+        let script_coverage = serde_json::from_str::<Vec<crate::format::script_coverage::ScriptCoverage>>(include_str!(
             "../tests/jsx/v8-coverage.json"
         ))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;

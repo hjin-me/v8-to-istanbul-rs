@@ -22,6 +22,7 @@ pub async fn build_statements(
     script_coverages: &Vec<&ScriptCoverage>,
     output_dir: &str,
     merge: bool,
+    use_local: bool,
 ) -> Result<HashMap<String, Statement>> {
     let mut source_map_url = HashMap::new();
     for &sc in script_coverages {
@@ -29,7 +30,7 @@ pub async fn build_statements(
     }
     let mut cache_data = HashMap::new();
     for (url, source) in source_map_url {
-        match gen_cache_data(url, source, output_dir, merge).await {
+        match gen_cache_data(url, source, output_dir, merge, use_local).await {
             Ok(d) => {
                 cache_data.insert(url.to_string(), d);
             }
@@ -46,6 +47,7 @@ async fn gen_cache_data<'a>(
     source: &'a str,
     output_dir: &'a str,
     merge: bool,
+    use_local: bool,
 ) -> Result<Statement> {
     let uid = url_key(&url);
     info!("下载source map 文件 {}.map", &url);
@@ -61,8 +63,10 @@ async fn gen_cache_data<'a>(
     } else {
         format!("{}/{}", output_dir, uid)
     };
-    trace!("生成源码目录 {}", base_dir);
-    generate_source_code(&sm, &base_dir).await?;
+    if !use_local {
+        trace!("生成源码目录 {}", base_dir);
+        generate_source_code(&sm, &base_dir).await?;
+    }
     // 生成中间文件
     trace!("生成中间文件");
     let vm = source_map_link(&source, &sm)

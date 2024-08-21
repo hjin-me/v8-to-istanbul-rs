@@ -2,20 +2,17 @@ mod format;
 mod statement;
 mod translate;
 
-use crate::format::istanbul::generate_source_code;
 use crate::format::script_coverage::{
     build_coverage_range_tree, find_root_value_only, normalize_script_coverages, read_only,
     CoverRangeNode, CoverageRange, ScriptCoverage, ScriptCoverageRaw,
 };
 use crate::format::{istanbul, path_normalize};
 use crate::statement::{build_statements, Statement};
-use crate::translate::source_map_link;
 use anyhow::{anyhow, Result};
 use clap::{Args, Parser, Subcommand};
 use glob::glob;
 use rayon::prelude::*;
 use regex::Regex;
-use sourcemap::SourceMap;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::env;
@@ -50,6 +47,8 @@ struct ConvertArgs {
     output: String,
     #[arg(long, default_value = "false")]
     merge: bool,
+    #[arg(long, default_value = "false")]
+    use_local: bool,
 }
 
 #[tokio::main]
@@ -87,13 +86,19 @@ async fn main() -> Result<()> {
                 .values()
                 .flatten()
                 .collect::<Vec<&ScriptCoverage>>();
-            let statement_data = build_statements(&sc_arr, &output_dir, args.merge).await?;
+            let statement_data =
+                build_statements(&sc_arr, &output_dir, args.merge, args.use_local).await?;
 
             for (test_name, sc_arr) in all_script_coverages {
                 for sc in sc_arr {
                     info!("处理脚本: {}", sc.url);
-                    match handle_script_coverage(&statement_data, &test_name, &sc, &output_dir)
-                        .await
+                    match handle_script_coverage(
+                        &statement_data,
+                        &format!("{}_{}", test_name, sc.url),
+                        &sc,
+                        &output_dir,
+                    )
+                    .await
                     {
                         Ok(_) => {}
                         Err(e) => error!("{} 失败 {}", sc.url, e),
