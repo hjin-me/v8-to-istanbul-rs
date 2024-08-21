@@ -1,0 +1,17 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --sourcemap --outfile=src/main.min.js"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.42.1",
+    "esbuild": "^0.23.0",
+    "nyc": "^15.1.0"
+  }
+}

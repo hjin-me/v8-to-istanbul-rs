@@ -7,7 +7,7 @@
   const a = isTrue || 0;
   const b = isTrue && 0;
   const c = isTrue ?? 0;
-  const d = isTrue?.toString();
+  const d = isTrue.unknown?.toString();
 
   const ran = Math.random();
   let s;

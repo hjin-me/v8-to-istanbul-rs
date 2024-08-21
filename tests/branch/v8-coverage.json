@@ -1,0 +1,667 @@
+[
+  {
+    "url": "http://127.0.0.1:3000/src/main.min.js",
+    "scriptId": "4",
+    "source": "(()=>{var b=Object.create;var i=Object.defineProperty;var k=Object.getOwnPropertyDescriptor;var m=Object.getOwnPropertyNames;var D=Object.getPrototypeOf,$=Object.prototype.hasOwnProperty;var u=(o,n)=>()=>(n||o((n={exports:{}}).exports,n),n.exports);var M=(o,n,s,c)=>{if(n&&typeof n==\"object\"||typeof n==\"function\")for(let t of m(n))!$.call(o,t)&&t!==s&&i(o,t,{get:()=>n[t],enumerable:!(c=k(n,t))||c.enumerable});return o};var g=(o,n,s)=>(s=o!=null?b(D(o)):{},M(n||!o||!o.__esModule?i(s,\"default\",{value:o,enumerable:!0}):s,o));var h=u(()=>{var e=window.location.href.includes(\"https\")?\"https\":\"http\";function a(){{let o=Date.now();console.log(`this is used block 1 ${o}`)}{let o=Date.now();console.log(`this is used block 2 ${o}`)}}function d(){{let o=Date.now();console.log(`this is unused block 1 ${o}`)}{let o=Date.now();console.log(`this is unused block 2 ${o}`)}}e===\"http\"?S():T();function S(){e===\"http\"?a():d()}function T(){e===\"http\"?a():d()}function j(){let o=()=>{console.log(\"used\")},n=()=>{console.log(\"used\")};function s(){console.log(\"used\")}function c(){console.log(\"used\")}e===\"http\"?(o(),s()):(n(),c())}j();var q=()=>{console.log(\"used\")},v=function(){console.log(\"used\")},x=()=>{console.log(\"not used\")},y=function(){console.log(\"not used\")};e===\"http\"?(q(),v()):(x(),y(),console.log(\"f5\"));function z(){e===\"http\"?console.log(\"f16\"):console.log(\"f17\")}z()});var p=u(()=>{(()=>{let o=window.location.href.includes(\"https\")?\"https\":\"http\";o&&console.log(!0);let n=o||0,s=o&&0,c=o??0,t=o.unknown?.toString(),f=Math.random(),l;switch(f<.3?l=\"1\":f<.5?l=\"2\":l=\"3\",l){case\"1\":{console.log(1);break}case\"2\":console.log(2),console.log(2.1),console.log(2.2);case\"3\":{console.log(3);break}default:console.log(\"default\")}})()});var r=g(h()),w=g(p());console.log(r.default,w.default);})();\n//# sourceMappingURL=main.min.js.map\n",
+    "functions": [
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 1834,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1,
+            "endOffset": 1792,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "u",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 193,
+            "endOffset": 248,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 200,
+            "endOffset": 248,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "functionName": "M",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 255,
+            "endOffset": 421,
+            "count": 2
+          },
+          {
+            "startOffset": 291,
+            "endOffset": 313,
+            "count": 0
+          },
+          {
+            "startOffset": 332,
+            "endOffset": 412,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "get",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 364,
+            "endOffset": 372,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "g",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 428,
+            "endOffset": 526,
+            "count": 2
+          },
+          {
+            "startOffset": 455,
+            "endOffset": 458,
+            "count": 0
+          },
+          {
+            "startOffset": 520,
+            "endOffset": 522,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 535,
+            "endOffset": 1376,
+            "count": 1
+          },
+          {
+            "startOffset": 584,
+            "endOffset": 592,
+            "count": 0
+          },
+          {
+            "startOffset": 882,
+            "endOffset": 886,
+            "count": 0
+          },
+          {
+            "startOffset": 1281,
+            "endOffset": 1309,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "a",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 600,
+            "endOffset": 732,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "d",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 732,
+            "endOffset": 868,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "S",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 887,
+            "endOffset": 919,
+            "count": 1
+          },
+          {
+            "startOffset": 914,
+            "endOffset": 918,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "T",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 919,
+            "endOffset": 951,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "j",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 951,
+            "endOffset": 1121,
+            "count": 1
+          },
+          {
+            "startOffset": 1110,
+            "endOffset": 1120,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "o",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 970,
+            "endOffset": 995,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "n",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 998,
+            "endOffset": 1023,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "s",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1024,
+            "endOffset": 1057,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "c",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1057,
+            "endOffset": 1090,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "q",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1131,
+            "endOffset": 1156,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "v",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1159,
+            "endOffset": 1190,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "x",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1193,
+            "endOffset": 1222,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "y",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1225,
+            "endOffset": 1260,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "z",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1310,
+            "endOffset": 1372,
+            "count": 1
+          },
+          {
+            "startOffset": 1352,
+            "endOffset": 1371,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1386,
+            "endOffset": 1734,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1392,
+            "endOffset": 1730,
+            "count": 1
+          },
+          {
+            "startOffset": 1441,
+            "endOffset": 1449,
+            "count": 0
+          },
+          {
+            "startOffset": 1483,
+            "endOffset": 1486,
+            "count": 0
+          },
+          {
+            "startOffset": 1497,
+            "endOffset": 1500,
+            "count": 0
+          },
+          {
+            "startOffset": 1512,
+            "endOffset": 1522,
+            "count": 0
+          },
+          {
+            "startOffset": 1554,
+            "endOffset": 1560,
+            "count": 0
+          },
+          {
+            "startOffset": 1565,
+            "endOffset": 1571,
+            "count": 0
+          },
+          {
+            "startOffset": 1581,
+            "endOffset": 1668,
+            "count": 0
+          },
+          {
+            "startOffset": 1698,
+            "endOffset": 1728,
+            "count": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "url": "http://127.0.0.1:3000/src/fnMap.js",
+    "scriptId": "5",
+    "source": "const proto = window.location.href.includes('https') ? 'https' : 'http'\n\nfunction f6() {\n  {\n    const a = Date.now()\n    console.log(`this is used block 1 ${a}`)\n  }\n  {\n    const a = Date.now()\n    console.log(`this is used block 2 ${a}`)\n  }\n}\n\nfunction f7() {\n  {\n    const a = Date.now()\n    console.log(`this is unused block 1 ${a}`)\n  }\n  {\n    const a = Date.now()\n    console.log(`this is unused block 2 ${a}`)\n  }\n}\n\nif (proto === 'http') {\n  f8()\n} else {\n  f9()\n}\n\nfunction f8() {\n  if (proto === 'http') {\n    f6()\n  } else {\n    f7()\n  }\n}\n\nfunction f9() {\n  if (proto === 'http') {\n    f6()\n  } else {\n    f7()\n  }\n}\n\nfunction f10() {\n  const f11 = () => {\n    console.log('used')\n  }\n  const f12 = () => {\n    console.log('used')\n  }\n\n  function f13() {\n    console.log('used')\n  }\n\n  function f14() {\n    console.log('used')\n  }\n\n  if (proto === 'http') {\n    f11()\n    f13()\n  } else {\n    f12()\n    f14()\n  }\n}\n\nf10()\n\nconst f1 = () => {\n  console.log('used')\n}\nconst f2 = function () {\n  console.log('used')\n}\nconst f3 = () => {\n  console.log('not used')\n}\nconst f4 = function () {\n  console.log('not used')\n}\nif (proto === 'http') {\n  f1()\n  f2()\n} else {\n  f3()\n  f4()\n\n  const f5 = () => {\n    console.log('f5')\n  }\n\n  f5()\n}\n\nfunction f15() {\n  if (proto === 'http') {\n    const f16 = () => {\n      console.log('f16')\n    }\n    f16()\n  } else {\n    const f17 = () => {\n      console.log('f17')\n    }\n    f17()\n  }\n}\n\nf15()\n",
+    "functions": [
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 1447,
+            "count": 1
+          },
+          {
+            "startOffset": 53,
+            "endOffset": 62,
+            "count": 0
+          },
+          {
+            "startOffset": 459,
+            "endOffset": 475,
+            "count": 0
+          },
+          {
+            "startOffset": 1169,
+            "endOffset": 1248,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f6",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 73,
+            "endOffset": 246,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f7",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 248,
+            "endOffset": 425,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f8",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 477,
+            "endOffset": 553,
+            "count": 1
+          },
+          {
+            "startOffset": 531,
+            "endOffset": 551,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f9",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 555,
+            "endOffset": 631,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f10",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 633,
+            "endOffset": 929,
+            "count": 1
+          },
+          {
+            "startOffset": 896,
+            "endOffset": 927,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f11",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 664,
+            "endOffset": 699,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f12",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 714,
+            "endOffset": 749,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f13",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 753,
+            "endOffset": 797,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f14",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 801,
+            "endOffset": 845,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f1",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 949,
+            "endOffset": 980,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f2",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 992,
+            "endOffset": 1029,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f3",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1041,
+            "endOffset": 1076,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f4",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1088,
+            "endOffset": 1129,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f5",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1205,
+            "endOffset": 1238,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f15",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1250,
+            "endOffset": 1439,
+            "count": 1
+          },
+          {
+            "startOffset": 1361,
+            "endOffset": 1437,
+            "count": 0
+          }
+        ]
+      },
+      {
+        "functionName": "f16",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1309,
+            "endOffset": 1347,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "f17",
+        "isBlockCoverage": false,
+        "ranges": [
+          {
+            "startOffset": 1385,
+            "endOffset": 1423,
+            "count": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "url": "http://127.0.0.1:3000/src/branchMap.js",
+    "scriptId": "6",
+    "source": "(() => {\n  const isTrue = window.location.href.includes(\"https\") ? \"https\" : \"http\";\n  if (isTrue) {\n    console.log(true);\n  }\n\n  const a = isTrue || 0;\n  const b = isTrue && 0;\n  const c = isTrue ?? 0;\n  const d = isTrue.unknown?.toString();\n\n  const ran = Math.random();\n  let s;\n  if (ran < 0.3) {\n    s = \"1\";\n  } else if (ran < 0.5) {\n    s = \"2\";\n  } else {\n    s = \"3\";\n  }\n\n  switch (s) {\n    case \"1\": {\n      console.log(1);\n      break;\n    }\n    case \"2\":\n      console.log(2);\n      console.log(2.1);\n      console.log(2.2);\n    case \"3\": {\n      console.log(3);\n      break;\n    }\n    default: {\n      console.log(\"default\");\n    }\n  }\n})();\n",
+    "functions": [
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 657,
+            "count": 1
+          }
+        ]
+      },
+      {
+        "functionName": "",
+        "isBlockCoverage": true,
+        "ranges": [
+          {
+            "startOffset": 1,
+            "endOffset": 652,
+            "count": 1
+          },
+          {
+            "startOffset": 65,
+            "endOffset": 74,
+            "count": 0
+          },
+          {
+            "startOffset": 148,
+            "endOffset": 152,
+            "count": 0
+          },
+          {
+            "startOffset": 198,
+            "endOffset": 202,
+            "count": 0
+          },
+          {
+            "startOffset": 230,
+            "endOffset": 240,
+            "count": 0
+          },
+          {
+            "startOffset": 318,
+            "endOffset": 381,
+            "count": 0
+          },
+          {
+            "startOffset": 459,
+            "endOffset": 538,
+            "count": 0
+          },
+          {
+            "startOffset": 543,
+            "endOffset": 595,
+            "count": 0
+          },
+          {
+            "startOffset": 600,
+            "endOffset": 646,
+            "count": 0
+          }
+        ]
+      }
+    ]
+  }
+]
