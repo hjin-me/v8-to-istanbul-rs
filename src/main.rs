@@ -13,6 +13,7 @@ use clap::{Args, Parser, Subcommand};
 use glob::glob;
 use rayon::prelude::*;
 use regex::Regex;
+use sha1::{Digest, Sha1};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::env;
@@ -90,11 +91,12 @@ async fn main() -> Result<()> {
                 build_statements(&sc_arr, &output_dir, args.merge, args.use_local).await?;
 
             for (test_name, sc_arr) in all_script_coverages {
+                let test_name_hash = hash(&test_name);
                 for sc in sc_arr {
                     info!("处理脚本: {}", sc.url);
                     match handle_script_coverage(
                         &statement_data,
-                        &format!("{}_{}", test_name, sc.url),
+                        &format!("{}_{}", test_name_hash, hash(&sc.url)),
                         &sc,
                         &output_dir,
                     )
@@ -200,6 +202,20 @@ where
     }
 }
 
+pub fn hash(s: &str) -> String {
+    // Create a Sha1 object
+    let mut hasher = Sha1::new();
+
+    // Write the input data to the hasher
+    hasher.update(s);
+
+    // Finalize the hash and obtain the result as a byte array
+    let result = hasher.finalize();
+
+    // Convert the result to a hexadecimal string
+    hex::encode(result)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -213,7 +229,7 @@ mod test {
 
     #[test]
     fn test_glob() {
-        let mut cwd = env::current_dir().unwrap();
+        let cwd = env::current_dir().unwrap();
         assert_eq!(
             glob_abs("tests/base/**/*.json").unwrap(),
             glob_abs(&format!("{}/tests/base/**/*.json", cwd.to_str().unwrap())).unwrap()

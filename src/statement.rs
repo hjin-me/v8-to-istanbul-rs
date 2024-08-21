@@ -4,13 +4,10 @@ use crate::format::MappingItem;
 use crate::translate::source_map_link;
 use anyhow::anyhow;
 use anyhow::Result;
-use derive_builder::Builder;
-use rayon::prelude::*;
 use regex::Regex;
-use reqwest::Url;
 use sourcemap::SourceMap;
-use std::collections::{HashMap, HashSet};
-use tracing::{error, info, instrument, trace, warn};
+use std::collections::HashMap;
+use tracing::{info, instrument, trace, warn};
 
 pub struct Statement {
     pub source_url: String,
