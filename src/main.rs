@@ -17,12 +17,12 @@ use regex::Regex;
 use sha1::{Digest, Sha1};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::str::FromStr;
+use std::{env, time};
 use tokio::fs;
 use tracing::{error, info, instrument, trace};
 use tracing_subscriber::EnvFilter;
@@ -55,6 +55,7 @@ struct ConvertArgs {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _t = Timer::new();
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
@@ -64,14 +65,14 @@ async fn main() -> Result<()> {
     // matches just as you would the top level cmd
     match &cli.command {
         Commands::Convert(args) => {
-            info!("start");
-            let all_script_coverage_filess = glob_abs(&args.pattern)?;
+            info!("开干");
+            let all_script_coverage_files = glob_abs(&args.pattern)?;
             info!(
                 "待处理的覆盖率报告文件列表 {:?}",
-                &all_script_coverage_filess
+                &all_script_coverage_files
             );
             let mut all_script_coverages = HashMap::new();
-            for p in all_script_coverage_filess {
+            for p in all_script_coverage_files {
                 trace!("处理文件 {}", p.to_str().unwrap());
                 let mut s = String::new();
                 File::open(&p)?.read_to_string(&mut s)?;
@@ -140,7 +141,7 @@ async fn main() -> Result<()> {
                 let d = format!("{}/.nyc_output/merged.json", output_dir);
                 let b = serde_json::to_string_pretty(&result)?;
                 match fs::write(&d, b).await {
-                    Ok(_) => {}
+                    Ok(_) => info!("搞定"),
                     Err(e) => error!("写入报告失败 [{}] {}", &d, e),
                 }
             }
@@ -237,6 +238,23 @@ pub fn hash(s: &str) -> String {
 
     // Convert the result to a hexadecimal string
     hex::encode(result)
+}
+
+struct Timer {
+    start: time::Instant,
+}
+impl Timer {
+    fn new() -> Self {
+        Timer {
+            start: time::Instant::now(),
+        }
+    }
+}
+impl Drop for Timer {
+    fn drop(&mut self) {
+        let now = time::Instant::now();
+        info!("任务执行耗时: {}s", (now - self.start).as_secs_f32());
+    }
 }
 
 #[cfg(test)]

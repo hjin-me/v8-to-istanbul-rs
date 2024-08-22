@@ -47,7 +47,7 @@ async fn gen_cache_data<'a>(
     use_local: bool,
 ) -> Result<Statement> {
     let uid = url_key(&url);
-    info!("下载source map 文件 {}.map", &url);
+    info!("下载 source map 文件 {}.map", &url);
     let smb = reqwest::get(&format!("{}.map", &url))
         .await?
         .bytes()
