@@ -2,6 +2,7 @@ mod format;
 mod statement;
 mod translate;
 
+use crate::format::istanbul::IstanbulCov;
 use crate::format::script_coverage::{
     build_coverage_range_tree, find_root_value_only, normalize_script_coverages, read_only,
     CoverRangeNode, CoverageRange, ScriptCoverage, ScriptCoverageRaw,
@@ -23,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::str::FromStr;
 use tokio::fs;
-use tracing::{error, info, instrument, trace, warn};
+use tracing::{error, info, instrument, trace};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -81,6 +82,7 @@ async fn main() -> Result<()> {
             }
 
             let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
+            fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
 
             // 先把 script coverage 和 source map 这两批静态且重复的文件处理好
             let sc_arr = all_script_coverages
@@ -89,22 +91,57 @@ async fn main() -> Result<()> {
                 .collect::<Vec<&ScriptCoverage>>();
             let statement_data =
                 build_statements(&sc_arr, &output_dir, args.merge, args.use_local).await?;
+            let mut reports = vec![];
 
             for (test_name, sc_arr) in all_script_coverages {
                 let test_name_hash = hash(&test_name);
                 for sc in sc_arr {
-                    info!("处理脚本: {}", sc.url);
-                    match handle_script_coverage(
-                        &statement_data,
-                        &format!("{}_{}", test_name_hash, hash(&sc.url)),
-                        &sc,
-                        &output_dir,
-                    )
-                    .await
-                    {
-                        Ok(_) => {}
+                    info!("处理脚本: {} {}", test_name, sc.url);
+                    match handle_script_coverage(&statement_data, &sc).await {
+                        Ok(report) => {
+                            trace!("执行 nyc 生成报告");
+                            if !args.merge {
+                                let uid = format!("{}_{}", test_name_hash, hash(&sc.url));
+                                let b = match serde_json::to_string_pretty(&report) {
+                                    Ok(b) => b,
+                                    Err(e) => {
+                                        error!("序列化报告失败: {}", e);
+                                        continue;
+                                    }
+                                };
+                                let d = format!("{}/.nyc_output/{}.json", output_dir, uid);
+                                match fs::write(&d, b).await {
+                                    Ok(_) => {}
+                                    Err(e) => error!("写入报告失败 [{}] {}", &d, e),
+                                }
+                            } else {
+                                reports.push(report)
+                            }
+                        }
                         Err(e) => error!("{} 失败 {}", sc.url, e),
                     };
+                }
+            }
+            if args.merge {
+                let mut result: HashMap<String, IstanbulCov> = HashMap::new();
+                for x in reports {
+                    for (k, v) in x {
+                        let e = result.entry(k).or_insert(IstanbulCov::default());
+                        e.path = v.path;
+                        for (index, s) in v.statement_map {
+                            e.statement_map.insert(index, s);
+                        }
+                        for (index, count) in v.s {
+                            let c = e.s.entry(index).or_insert(0);
+                            *c += count;
+                        }
+                    }
+                }
+                let d = format!("{}/.nyc_output/merged.json", output_dir);
+                let b = serde_json::to_string_pretty(&result)?;
+                match fs::write(&d, b).await {
+                    Ok(_) => {}
+                    Err(e) => error!("写入报告失败 [{}] {}", &d, e),
                 }
             }
         }
@@ -114,17 +151,12 @@ async fn main() -> Result<()> {
 #[instrument(skip_all, fields(url = sc.url))]
 async fn handle_script_coverage(
     sd: &HashMap<String, Statement>,
-    sc_name: &str,
     sc: &ScriptCoverage,
-    output_dir: &str,
-) -> Result<()> {
-    let uid = url_key(&sc_name);
-
+) -> Result<HashMap<String, IstanbulCov>> {
     let statement = match sd.get(&sc.url) {
         Some(s) => s,
         None => {
-            warn!("未找到覆盖率数据, {}", &sc.url);
-            return Ok(());
+            return Err(anyhow!("未找到覆盖率数据 {}", &sc.url));
         }
     };
     let root = Rc::new(RefCell::new(CoverRangeNode::new(&CoverageRange {
@@ -159,16 +191,7 @@ async fn handle_script_coverage(
     // 生成 istanbul 文件
     trace!("生成 istanbul 文件");
     let report = istanbul::from(&vm, &statement.code_dir);
-    // 执行 nyc 生成报告
-    trace!("执行 nyc 生成报告");
-    fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
-    fs::write(
-        format!("{}/.nyc_output/{}.json", output_dir, uid),
-        serde_json::to_string_pretty(&report)?,
-    )
-    .await?;
-    info!("生成报告成功 {}", statement.code_dir);
-    Ok(())
+    Ok(report)
 }
 
 fn url_key(u: &str) -> String {

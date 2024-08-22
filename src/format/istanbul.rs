@@ -49,7 +49,7 @@ struct BranchMap {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct StatementMap {
+pub struct StatementMap {
     pub start: Position,
     pub end: Position,
 }
