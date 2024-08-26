@@ -5,6 +5,10 @@ edition = "2021"
 authors = ["HJin<hjin.me@qq.com>"]
 description = "A tool to convert v8 coverage to istanbul format"
 license = "MIT"
+repository = "https://github.com/hjin-me/v8-to-istanbul-rs"
+exclude = [
+    "tests*/",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
