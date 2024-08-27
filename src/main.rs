@@ -92,7 +92,8 @@ async fn main() -> Result<()> {
                 .collect::<Vec<&ScriptCoverage>>();
             let statement_data =
                 build_statements(&sc_arr, &output_dir, args.merge, args.use_local).await?;
-            let mut reports = vec![];
+
+            let mut merged_result: HashMap<String, IstanbulCov> = HashMap::new();
 
             for (test_name, sc_arr) in all_script_coverages {
                 let test_name_hash = hash(&test_name);
@@ -116,7 +117,17 @@ async fn main() -> Result<()> {
                                     Err(e) => error!("写入报告失败 [{}] {}", &d, e),
                                 }
                             } else {
-                                reports.push(report)
+                                for (k, v) in report {
+                                    let e = merged_result.entry(k).or_insert(IstanbulCov::default());
+                                    e.path = v.path;
+                                    for (index, s) in v.statement_map {
+                                        e.statement_map.insert(index, s);
+                                    }
+                                    for (index, count) in v.s {
+                                        let c = e.s.entry(index).or_insert(0);
+                                        *c += count;
+                                    }
+                                }
                             }
                         }
                         Err(e) => error!("{} 失败 {}", sc.url, e),
@@ -124,22 +135,8 @@ async fn main() -> Result<()> {
                 }
             }
             if args.merge {
-                let mut result: HashMap<String, IstanbulCov> = HashMap::new();
-                for x in reports {
-                    for (k, v) in x {
-                        let e = result.entry(k).or_insert(IstanbulCov::default());
-                        e.path = v.path;
-                        for (index, s) in v.statement_map {
-                            e.statement_map.insert(index, s);
-                        }
-                        for (index, count) in v.s {
-                            let c = e.s.entry(index).or_insert(0);
-                            *c += count;
-                        }
-                    }
-                }
                 let d = format!("{}/.nyc_output/merged.json", output_dir);
-                let b = serde_json::to_string_pretty(&result)?;
+                let b = serde_json::to_string_pretty(&merged_result)?;
                 match fs::write(&d, b).await {
                     Ok(_) => info!("搞定"),
                     Err(e) => error!("写入报告失败 [{}] {}", &d, e),

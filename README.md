@@ -14,5 +14,5 @@ v8-to-istanbul convert --pattern "test-results/**/v8-coverage.json" --filters "{
 
 ### TODO
 
-[ ] Functions
-[ ] Branch
+* [ ] Functions
+* [ ] Branch
