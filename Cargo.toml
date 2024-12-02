@@ -29,6 +29,8 @@ rayon = "1.10.0"
 regex = "1.10.6"
 lcov2 = "0.1.0"
 glob = "0.3.1"
+swc_core = { version = "0.109.0", features = ["base", "common", "ecma_parser", "ecma_visit", "ecma_parser_typescript", "typescript", "ecma_ast", "common_tty"] }
+url = "2.5.2"
 
 [dev-dependencies]
 assert-json-diff = "2.0.2"

@@ -1,6 +1,7 @@
 mod format;
 mod statement;
 mod translate;
+mod traverse;
 
 use crate::format::istanbul::IstanbulCov;
 use crate::format::script_coverage::{
@@ -51,6 +52,8 @@ struct ConvertArgs {
     merge: bool,
     #[arg(long, default_value = "false")]
     use_local: bool,
+    #[arg(long)]
+    source_map_base: Option<String>,
 }
 
 #[tokio::main]
@@ -91,7 +94,7 @@ async fn main() -> Result<()> {
                 .flatten()
                 .collect::<Vec<&ScriptCoverage>>();
             let statement_data =
-                build_statements(&sc_arr, &output_dir, args.merge, args.use_local).await?;
+                build_statements(&sc_arr, &output_dir, args.merge, args.use_local, args.source_map_base.clone()).await?;
 
             let mut merged_result: HashMap<String, IstanbulCov> = HashMap::new();
 
@@ -118,7 +121,8 @@ async fn main() -> Result<()> {
                                 }
                             } else {
                                 for (k, v) in report {
-                                    let e = merged_result.entry(k).or_insert(IstanbulCov::default());
+                                    let e =
+                                        merged_result.entry(k).or_insert(IstanbulCov::default());
                                     e.path = v.path;
                                     for (index, s) in v.statement_map {
                                         e.statement_map.insert(index, s);
