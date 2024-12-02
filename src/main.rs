@@ -93,8 +93,14 @@ async fn main() -> Result<()> {
                 .values()
                 .flatten()
                 .collect::<Vec<&ScriptCoverage>>();
-            let statement_data =
-                build_statements(&sc_arr, &output_dir, args.merge, args.use_local, args.source_map_base.clone()).await?;
+            let statement_data = build_statements(
+                &sc_arr,
+                &output_dir,
+                args.merge,
+                args.use_local,
+                args.source_map_base.clone(),
+            )
+            .await?;
 
             let mut merged_result: HashMap<String, IstanbulCov> = HashMap::new();
 
@@ -254,7 +260,7 @@ impl Timer {
 impl Drop for Timer {
     fn drop(&mut self) {
         let now = time::Instant::now();
-        info!("任务执行耗时: {}s", (now - self.start).as_secs_f32());
+        info!("任务执行耗时: {:.3}s", (now - self.start).as_secs_f32());
     }
 }
 

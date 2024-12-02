@@ -61,6 +61,7 @@ async fn gen_cache_data<'a>(
     source_map_base: Option<String>,
 ) -> Result<Statement> {
     let uid = url_key(&url);
+    let url = url_normalize(url);
 
     let sm_path = match source_map_base {
         Some(s) => {
@@ -71,9 +72,7 @@ async fn gen_cache_data<'a>(
     };
     // source map 可以从网络下载，或者本地查找
     let smb = match sm_path {
-        Some(s) => {
-            fs::read_to_string(&s).map_err(|e| anyhow!("读取 source map 路径错误: {}", e))?
-        }
+        Some(s) => fs::read_to_string(&s).map_err(|e| anyhow!("读取 sourcemap 路径错误: {}", e))?,
         None => reqwest::get(&format!("{}.map", &url)).await?.text().await?,
     };
 
@@ -110,6 +109,14 @@ fn url_key(u: &str) -> String {
     re.replace_all(u, "_").to_string()
 }
 
+fn url_normalize(u: &str) -> String {
+    if u.starts_with("//") {
+        format!("https:{}", u)
+    } else {
+        u.to_string()
+    }
+}
+
 fn get_js_filename(u: &str, source_map_base: &str) -> Option<String> {
     let u = match Url::parse(u) {
         Ok(url) => url,
@@ -127,7 +134,7 @@ fn get_js_filename(u: &str, source_map_base: &str) -> Option<String> {
     if let Some(filename) = path_segments.last() {
         path.push(format!("{}.map", filename));
         if fs::metadata(&path).is_ok() {
-            debug!("文件名: {}", filename);
+            debug!("文件名: {}", path.to_string_lossy().to_string());
             return Some(path.to_string_lossy().to_string());
         }
     }
