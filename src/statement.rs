@@ -24,6 +24,7 @@ pub async fn build_statements(
     merge: bool,
     use_local: bool,
     source_map_base: Option<String>,
+    source_relocate: Option<(Regex, String)>,
 ) -> Result<HashMap<String, Statement>> {
     let mut source_map_url = HashMap::new();
     for &sc in script_coverages {
@@ -38,6 +39,7 @@ pub async fn build_statements(
             merge,
             use_local,
             source_map_base.clone(),
+            source_relocate.clone(),
         )
         .await
         {
@@ -59,6 +61,7 @@ async fn gen_cache_data<'a>(
     merge: bool,
     use_local: bool,
     source_map_base: Option<String>,
+    source_relocate: Option<(Regex, String)>,
 ) -> Result<Statement> {
     let uid = url_key(&url);
     let url = url_normalize(url);
@@ -77,8 +80,19 @@ async fn gen_cache_data<'a>(
     };
 
     trace!("解码 source map");
-    let sm =
+    let mut sm =
         SourceMap::from_slice(smb.as_bytes()).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
+
+    // source 字段对应的文件路径需要重新定位一下
+    if let Some((re, replace)) = source_relocate {
+        let n = sm.get_source_count();
+        for i in 0..n {
+            if let Some(s) = sm.get_source(i) {
+                let s = re.replace(s, replace.as_str()).to_string();
+                sm.set_source(i, s.as_str())
+            }
+        }
+    }
     // 生成源码目录
     let base_dir = if merge {
         output_dir.to_string()

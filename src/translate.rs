@@ -4,6 +4,7 @@ use sourcemap::SourceMap;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::Path;
+use tracing::debug;
 
 pub async fn source_map_link<'a>(
     source: &'a str,
@@ -17,6 +18,13 @@ pub async fn source_map_link<'a>(
 
     let mut line_length_map: HashMap<&str, Vec<u32>> = HashMap::new();
     for (i, s) in source_map.sources().enumerate() {
+        if s.starts_with("external script ")
+            || s.starts_with("webpack:")
+            || s.contains("node_modules")
+        {
+            continue;
+        }
+        debug!("source path = {}", s);
         line_length_map.insert(
             s,
             source_map
@@ -41,6 +49,12 @@ pub async fn source_map_link<'a>(
             } else {
                 start
             };
+            if source.starts_with("external script ")
+                || source.starts_with("webpack:")
+                || source.contains("node_modules")
+            {
+                continue;
+            }
             let m = MappingItem {
                 source: source.to_string(),
                 generated_column: start,
@@ -71,7 +85,12 @@ pub async fn source_map_link<'a>(
             count: 0,
             idx: n - 1,
         };
-        sector_map.push(m);
+        if !(source.starts_with("external script ")
+            || source.starts_with("webpack:")
+            || source.contains("node_modules"))
+        {
+            sector_map.push(m);
+        }
     }
 
     sector_map.sort_unstable_by(|a, b| {
@@ -197,36 +216,38 @@ pub async fn source_map_link<'a>(
         last_idx = vec![i]
     }
 
-    // 收集一下待处理的状态
-    let (source, start_line, start_column) = (
-        sector_map[last_idx[0]].source.as_str(),
-        sector_map[last_idx[0]].original_line,
-        sector_map[last_idx[0]].original_column,
-    );
-    if let Some(v) = line_length_map.get(source) {
-        let (cross_line, lines_length) = (
-            start_column >= v[start_line as usize], // 当前 token 起始位置已经超过行的长度
-            v,
+    if !sector_map.is_empty() {
+        // 收集一下待处理的状态
+        let (source, start_line, start_column) = (
+            sector_map[last_idx[0]].source.as_str(),
+            sector_map[last_idx[0]].original_line,
+            sector_map[last_idx[0]].original_column,
         );
-        for idx in last_idx.iter() {
-            match cross_line {
-                true => {
-                    let mut prev_i = lines_length.len() - 1;
-                    while prev_i >= start_line as usize && lines_length[prev_i] == 0 {
-                        prev_i -= 1;
+        if let Some(v) = line_length_map.get(source) {
+            let (cross_line, lines_length) = (
+                start_column >= v[start_line as usize], // 当前 token 起始位置已经超过行的长度
+                v,
+            );
+            for idx in last_idx.iter() {
+                match cross_line {
+                    true => {
+                        let mut prev_i = lines_length.len() - 1;
+                        while prev_i >= start_line as usize && lines_length[prev_i] == 0 {
+                            prev_i -= 1;
+                        }
+                        sector_map[*idx].last_original_line = prev_i as u32;
+                        sector_map[*idx].last_original_column = lines_length[prev_i] - 1;
                     }
-                    sector_map[*idx].last_original_line = prev_i as u32;
-                    sector_map[*idx].last_original_column = lines_length[prev_i] - 1;
-                }
 
-                false => {
-                    sector_map[*idx].last_original_line = sector_map[*idx].original_line;
-                    sector_map[*idx].last_original_column = lines_length[start_line as usize] - 1;
+                    false => {
+                        sector_map[*idx].last_original_line = sector_map[*idx].original_line;
+                        sector_map[*idx].last_original_column = lines_length[start_line as usize] - 1;
+                    }
                 }
             }
         }
     }
-    // dbg!(&sector_map);
+
     Ok(sector_map
         .into_iter()
         .filter(|s| is_file_extension_allowed(s.source.as_str(), &["js", "jsx", "ts", "tsx"]))
@@ -250,9 +271,9 @@ mod test {
 
     #[tokio::test]
     async fn test_source_map_link_base() -> Result<()> {
-        let script_coverage = serde_json::from_str::<Vec<crate::format::script_coverage::ScriptCoverage>>(include_str!(
-            "../tests/base/v8-coverage.json"
-        ))
+        let script_coverage = serde_json::from_str::<
+            Vec<crate::format::script_coverage::ScriptCoverage>,
+        >(include_str!("../tests/base/v8-coverage.json"))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map = SourceMap::from_slice(include_bytes!("../tests/base/main.min.js.map"))?;
         let r = source_map_link(&script_coverage[0].source, &source_map).await?;
@@ -269,9 +290,9 @@ mod test {
     }
     #[tokio::test]
     async fn test_source_map_link_jsx() -> Result<()> {
-        let script_coverage = serde_json::from_str::<Vec<crate::format::script_coverage::ScriptCoverage>>(include_str!(
-            "../tests/jsx/v8-coverage.json"
-        ))
+        let script_coverage = serde_json::from_str::<
+            Vec<crate::format::script_coverage::ScriptCoverage>,
+        >(include_str!("../tests/jsx/v8-coverage.json"))
         .map_err(|e| anyhow!("parse script coverage error: {}", e))?;
         let source_map =
             SourceMap::from_slice(include_bytes!("../tests/jsx/main.f272a57c.chunk.js.map"))?;

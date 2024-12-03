@@ -25,7 +25,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::{env, time};
 use tokio::fs;
-use tracing::{error, info, instrument, trace};
+use tracing::{error, info, instrument, trace, warn};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -54,6 +54,8 @@ struct ConvertArgs {
     use_local: bool,
     #[arg(long)]
     source_map_base: Option<String>,
+    #[arg(long)]
+    source_relocate: Option<String>,
 }
 
 #[tokio::main]
@@ -87,6 +89,17 @@ async fn main() -> Result<()> {
 
             let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
             fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
+            let source_relocate = args
+                .source_relocate
+                .clone()
+                .map(|s| match relocate(&s) {
+                    Ok(r) => Some(r),
+                    Err(err) => {
+                        warn!("解析 source_relocate 失败 {}", err);
+                        None
+                    }
+                })
+                .flatten();
 
             // 先把 script coverage 和 source map 这两批静态且重复的文件处理好
             let sc_arr = all_script_coverages
@@ -99,6 +112,7 @@ async fn main() -> Result<()> {
                 args.merge,
                 args.use_local,
                 args.source_map_base.clone(),
+                source_relocate,
             )
             .await?;
 
@@ -264,6 +278,22 @@ impl Drop for Timer {
     }
 }
 
+fn relocate(pattern: &str) -> Result<(Regex, String)> {
+    if pattern.is_empty() {
+        return Err(anyhow!("pattern is empty"));
+    }
+    if let Some(first_char) = pattern.chars().next() {
+        let mut s = pattern.split(first_char);
+        s.next().ok_or(anyhow!("第一段字符串找不到"))?;
+        let reg = s.next().unwrap_or_default();
+        let replace = s.next().unwrap_or_default();
+        let re = Regex::new(reg)?;
+        Ok((re, replace.to_string()))
+    } else {
+        Err(anyhow!("pattern is empty"))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -282,5 +312,10 @@ mod test {
             glob_abs("tests/base/**/*.json").unwrap(),
             glob_abs(&format!("{}/tests/base/**/*.json", cwd.to_str().unwrap())).unwrap()
         );
+    }
+
+    #[test]
+    fn test_relocate() {
+        dbg!(relocate(r"%webpack://%%").unwrap());
     }
 }
