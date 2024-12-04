@@ -4,8 +4,9 @@ use sourcemap::SourceMap;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::Path;
-use tracing::debug;
+use tracing::{debug, instrument};
 
+#[instrument(skip(source_content, source_map))]
 pub async fn source_map_link<'a>(
     source_content: &'a str,
     source_map: &'a SourceMap,
@@ -241,7 +242,8 @@ pub async fn source_map_link<'a>(
 
                     false => {
                         sector_map[*idx].last_original_line = sector_map[*idx].original_line;
-                        sector_map[*idx].last_original_column = lines_length[start_line as usize] - 1;
+                        sector_map[*idx].last_original_column =
+                            lines_length[start_line as usize] - 1;
                     }
                 }
             }
