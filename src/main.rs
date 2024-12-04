@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
                 })
                 .flatten();
 
-            let all_script_coverages =
+            let mut all_script_coverages =
                 collect_coverage_helper(&args.pattern, &args.filters).await?;
 
             let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
@@ -89,13 +89,25 @@ async fn main() -> Result<()> {
             let statement_data = build_statements_from_local(
                 &args.source_map_base,
                 &args.url_base,
-                &args.output,
+                &output_dir,
                 &source_relocate,
             )
             .await?;
             dbg!(&statement_data.keys());
 
             let mut merged_result: HashMap<String, IstanbulCov> = HashMap::new();
+            // 创建空覆盖率报告
+            all_script_coverages.insert(
+                "empty_report".to_string(),
+                statement_data
+                    .iter()
+                    .map(|(k, _)| ScriptCoverage {
+                        url: k.to_string(),
+                        source: "".to_string(),
+                        functions: vec![],
+                    })
+                    .collect(),
+            );
 
             for (test_name, sc_arr) in all_script_coverages {
                 // let test_name_hash = hash(&test_name);
@@ -103,8 +115,7 @@ async fn main() -> Result<()> {
                     info!("处理脚本: {} {}", test_name, sc.url);
                     match handle_script_coverage(&statement_data, &sc).await {
                         Ok(report) => {
-                            trace!("执行 nyc 生成报告 {:?}", report);
-
+                            trace!("执行 nyc 生成报告");
                             for (k, v) in report {
                                 let e = merged_result.entry(k).or_insert(IstanbulCov::default());
                                 e.path = v.path;
@@ -121,14 +132,13 @@ async fn main() -> Result<()> {
                     };
                 }
             }
-            // if args.merge {
+
             let d = format!("{}/.nyc_output/merged.json", output_dir);
             let b = serde_json::to_string_pretty(&merged_result)?;
             match fs::write(&d, b).await {
                 Ok(_) => info!("搞定"),
                 Err(e) => error!("写入报告失败 [{}] {}", &d, e),
             }
-            // }
         }
     }
     Ok(())

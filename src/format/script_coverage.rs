@@ -1,3 +1,4 @@
+use crate::statement::url_normalize;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::cell::RefCell;
@@ -5,6 +6,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
 use tracing::{info, trace, warn};
+use url::Url;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScriptCoverageRaw {
@@ -141,24 +143,26 @@ pub async fn normalize_script_coverages(
 ) -> Result<Vec<ScriptCoverage>> {
     let mut r = Vec::new();
     for sc in script_coverages {
-        if (filters.len() > 0 && filters.iter().find(|&f| sc.url.contains(f)).is_some())
+        let script_url = url_normalize(&sc.url);
+        let script_name = url_filename(&script_url);
+        if (filters.len() > 0 && filters.iter().find(|&f| script_url.contains(f)).is_some())
             || filters.is_empty()
         {
             let v = if let Some(s) = sc.source.clone() {
                 ScriptCoverage {
-                    url: sc.url.clone(),
+                    url: script_name,
                     source: s.clone(),
                     functions: sc.functions.clone(),
                 }
             } else {
-                let s = reqwest::get(&sc.url)
+                let s = reqwest::get(&script_url)
                     .await
-                    .map_err(|e| anyhow!("请求URL失败: {} {}", &sc.url, e))?
+                    .map_err(|e| anyhow!("请求URL失败: {} {}", &script_url, e))?
                     .text()
                     .await
-                    .map_err(|e| anyhow!("请求URL失败: {} {}", &sc.url, e))?;
+                    .map_err(|e| anyhow!("请求URL失败: {} {}", &script_url, e))?;
                 ScriptCoverage {
-                    url: sc.url.clone(),
+                    url: script_name,
                     source: s,
                     functions: sc.functions.clone(),
                 }
@@ -167,6 +171,11 @@ pub async fn normalize_script_coverages(
         }
     }
     Ok(r)
+}
+
+pub fn url_filename(u: &str) -> String {
+    let s = u.split("?").next().unwrap_or_default();
+    s.split("/").last().unwrap_or_default().to_string()
 }
 
 pub async fn collect_coverage_helper(

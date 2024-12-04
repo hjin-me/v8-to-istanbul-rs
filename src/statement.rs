@@ -57,8 +57,9 @@ pub async fn build_statements_from_local(
         let vm = source_map_link(&source_content, &sm)
             .await
             .map_err(|e| anyhow!("生成覆盖率中间数据失败, {}", e))?;
+        let script_name = crate::format::script_coverage::url_filename(&script_url);
         cache_data.insert(
-            script_url.clone(),
+            script_name,
             Statement {
                 source_url: script_url,
                 code_dir: project_dir.to_string(),
@@ -218,7 +219,7 @@ fn url_key(u: &str) -> String {
     re.replace_all(u, "_").to_string()
 }
 
-fn url_normalize(u: &str) -> String {
+pub fn url_normalize(u: &str) -> String {
     if u.starts_with("//") {
         format!("https:{}", u)
     } else {
