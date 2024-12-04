@@ -7,8 +7,8 @@ use anyhow::Result;
 use regex::Regex;
 use sourcemap::SourceMap;
 use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{fmt, fs};
 use tracing::{debug, instrument, trace, warn};
 use url::Url;
 
@@ -16,6 +16,42 @@ pub struct Statement {
     pub source_url: String,
     pub code_dir: String,
     pub mapping: Vec<MappingItem>,
+}
+
+#[instrument()]
+pub async fn build_statements_from_local(
+    source_map_pattern: &str,
+    url_base: &Option<String>,
+    source_relocate: Option<(Regex, String)>,
+) -> Result<HashMap<String, Statement>> {
+    let mut cache_data = HashMap::new();
+    let all_source_map_files = crate::glob_abs(source_map_pattern)?;
+    for p in all_source_map_files {
+        trace!("处理文件 {}", p.to_str().unwrap());
+        let sm = source_map_from_file(&p, &source_relocate).await?;
+        let script_url = if let Some(ub) = url_base {
+            format!("{}{}", ub, sm.get_file().unwrap_or_default())
+        } else {
+            sm.get_file().unwrap_or_default().to_string()
+        };
+
+        let source_content = reqwest::get(&script_url).await?.text().await?;
+
+        trace!("生成中间文件");
+        let vm = source_map_link(&source_content, &sm)
+            .await
+            .map_err(|e| anyhow!("生成覆盖率中间数据失败, {}", e))?;
+        cache_data.insert(
+            script_url.clone(),
+            Statement {
+                source_url: script_url,
+                code_dir: "".to_string(),
+                mapping: vm,
+            },
+        );
+    }
+
+    Ok(cache_data)
 }
 
 pub async fn build_statements(
@@ -51,6 +87,51 @@ pub async fn build_statements(
     }
 
     Ok(cache_data)
+}
+
+#[instrument()]
+async fn source_map_from_file<P: AsRef<Path> + fmt::Debug>(
+    p: P,
+    source_relocate: &Option<(Regex, String)>,
+) -> Result<SourceMap> {
+    let s = fs::read_to_string(&p)?;
+    trace!("解码 source map");
+    let mut sm =
+        SourceMap::from_slice(s.as_bytes()).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
+
+    // source 字段对应的文件路径需要重新定位一下
+    if let Some((re, replace)) = source_relocate {
+        let n = sm.get_source_count();
+        for i in 0..n {
+            if let Some(s) = sm.get_source(i) {
+                let s = re.replace(s, replace.as_str()).to_string();
+                sm.set_source(i, s.as_str())
+            }
+        }
+    }
+    Ok(sm)
+}
+#[instrument()]
+async fn source_map_from_url(
+    u: &str,
+    source_relocate: Option<(Regex, String)>,
+) -> Result<SourceMap> {
+    let s = reqwest::get(u).await?.text().await?;
+    trace!("解码 source map");
+    let mut sm =
+        SourceMap::from_slice(s.as_bytes()).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
+
+    // source 字段对应的文件路径需要重新定位一下
+    if let Some((re, replace)) = source_relocate {
+        let n = sm.get_source_count();
+        for i in 0..n {
+            if let Some(s) = sm.get_source(i) {
+                let s = re.replace(s, replace.as_str()).to_string();
+                sm.set_source(i, s.as_str())
+            }
+        }
+    }
+    Ok(sm)
 }
 
 #[instrument(skip(source, output_dir))]

@@ -5,8 +5,9 @@ mod traverse;
 
 use crate::format::istanbul::IstanbulCov;
 use crate::format::script_coverage::{
-    build_coverage_range_tree, find_root_value_only, normalize_script_coverages, read_only,
-    CoverRangeNode, CoverageRange, ScriptCoverage, ScriptCoverageRaw,
+    build_coverage_range_tree, collect_coverage_helper, find_root_value_only,
+    normalize_script_coverages, read_only, CoverRangeNode, CoverageRange, ScriptCoverage,
+    ScriptCoverageRaw,
 };
 use crate::format::{istanbul, path_normalize};
 use crate::statement::{build_statements, Statement};
@@ -18,8 +19,6 @@ use regex::Regex;
 use sha1::{Digest, Sha1};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -53,9 +52,11 @@ struct ConvertArgs {
     #[arg(long, default_value = "false")]
     use_local: bool,
     #[arg(long)]
-    source_map_base: Option<String>,
+    url_base: Option<String>, // 用来补全 source map 里面 file 的路径
     #[arg(long)]
-    source_relocate: Option<String>,
+    source_map_base: Option<String>, // 本地 source map 文件所在的根目录
+    #[arg(long)]
+    source_relocate: Option<String>, // 用来替换 source map 里面 sources 的路径
 }
 
 #[tokio::main]
@@ -71,24 +72,7 @@ async fn main() -> Result<()> {
     match &cli.command {
         Commands::Convert(args) => {
             info!("开干");
-            let all_script_coverage_files = glob_abs(&args.pattern)?;
-            info!(
-                "待处理的覆盖率报告文件列表 {:?}",
-                &all_script_coverage_files
-            );
-            let mut all_script_coverages = HashMap::new();
-            for p in all_script_coverage_files {
-                trace!("处理文件 {}", p.to_str().unwrap());
-                let mut s = String::new();
-                File::open(&p)?.read_to_string(&mut s)?;
-                let sc_arr: Vec<ScriptCoverageRaw> = serde_json::from_str(&s)
-                    .map_err(|e| anyhow!("解析{:?}出错, {}", p.to_str(), e))?;
-                let sc_arr = normalize_script_coverages(&sc_arr, &args.filters).await?;
-                all_script_coverages.insert(p.to_str().unwrap().to_string(), sc_arr);
-            }
-
-            let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
-            fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
+            // 先处理输入参数
             let source_relocate = args
                 .source_relocate
                 .clone()
@@ -100,6 +84,12 @@ async fn main() -> Result<()> {
                     }
                 })
                 .flatten();
+
+            let all_script_coverages =
+                collect_coverage_helper(&args.pattern, &args.filters).await?;
+
+            let output_dir = path_to_abs(&args.output)?.to_str().unwrap().to_string();
+            fs::create_dir_all(format!("{}/.nyc_output/", output_dir)).await?;
 
             // 先把 script coverage 和 source map 这两批静态且重复的文件处理好
             let sc_arr = all_script_coverages

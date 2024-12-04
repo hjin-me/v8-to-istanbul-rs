@@ -7,11 +7,11 @@ use std::path::Path;
 use tracing::debug;
 
 pub async fn source_map_link<'a>(
-    source: &'a str,
+    source_content: &'a str,
     source_map: &'a SourceMap,
 ) -> Result<Vec<MappingItem>> {
     let mut generated_source_sect = vec![0];
-    for s in source.split('\n') {
+    for s in source_content.split('\n') {
         let last = generated_source_sect.last().unwrap();
         generated_source_sect.push(last + s.chars().count() as u32 + 1)
     }

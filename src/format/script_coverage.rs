@@ -2,8 +2,9 @@ use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::rc::Rc;
-use tracing::warn;
+use tracing::{info, trace, warn};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScriptCoverageRaw {
@@ -166,6 +167,27 @@ pub async fn normalize_script_coverages(
         }
     }
     Ok(r)
+}
+
+pub async fn collect_coverage_helper(
+    path_pattern: &str,
+    coverage_filters: &Vec<String>,
+) -> Result<HashMap<String, Vec<ScriptCoverage>>> {
+    let all_script_coverage_files = crate::glob_abs(path_pattern)?;
+    info!(
+        "待处理的覆盖率报告文件列表 {:?}",
+        &all_script_coverage_files
+    );
+    let mut all_script_coverages = HashMap::new();
+    for p in all_script_coverage_files {
+        trace!("处理文件 {}", p.to_str().unwrap());
+        let s = std::fs::read_to_string(&p)?;
+        let sc_arr: Vec<ScriptCoverageRaw> =
+            serde_json::from_str(&s).map_err(|e| anyhow!("解析{:?}出错, {}", p.to_str(), e))?;
+        let sc_arr = normalize_script_coverages(&sc_arr, coverage_filters).await?;
+        all_script_coverages.insert(p.to_str().unwrap().to_string(), sc_arr);
+    }
+    Ok(all_script_coverages)
 }
 
 #[cfg(test)]
