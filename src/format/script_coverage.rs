@@ -6,7 +6,6 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
 use tracing::{info, trace, warn};
-use url::Url;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScriptCoverageRaw {

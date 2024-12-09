@@ -1,4 +1,5 @@
 use crate::format::MappingItem;
+use crate::fputil::is_legal_source_path;
 use anyhow::{anyhow, Result};
 use sourcemap::SourceMap;
 use std::cmp::Ordering;
@@ -19,10 +20,7 @@ pub async fn source_map_link<'a>(
 
     let mut line_length_map: HashMap<&str, Vec<u32>> = HashMap::new();
     for (i, s) in source_map.sources().enumerate() {
-        if s.starts_with("external script ")
-            || s.starts_with("webpack:")
-            || s.contains("node_modules")
-        {
+        if !is_legal_source_path(s) {
             continue;
         }
         debug!("source path = {}", s);
@@ -30,7 +28,7 @@ pub async fn source_map_link<'a>(
             s,
             source_map
                 .get_source_contents(i as u32)
-                .ok_or(anyhow!("source contents not found"))?
+                .unwrap_or_default()
                 .split('\n')
                 .map(|s| s.len() as u32)
                 .collect(),
@@ -50,10 +48,7 @@ pub async fn source_map_link<'a>(
             } else {
                 start
             };
-            if source.starts_with("external script ")
-                || source.starts_with("webpack:")
-                || source.contains("node_modules")
-            {
+            if !is_legal_source_path(source) {
                 continue;
             }
             let m = MappingItem {
@@ -86,10 +81,7 @@ pub async fn source_map_link<'a>(
             count: 0,
             idx: n - 1,
         };
-        if !(source.starts_with("external script ")
-            || source.starts_with("webpack:")
-            || source.contains("node_modules"))
-        {
+        if is_legal_source_path(source) {
             sector_map.push(m);
         }
     }
