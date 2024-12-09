@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::str::FromStr;
 use std::{env, time};
-use tracing::{info, instrument, trace};
+use tracing::{info, instrument, trace, warn};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
     }
     Ok(())
 }
-#[instrument(skip_all, fields(url = sc.url))]
+#[instrument(skip_all, fields(script = sc.url))]
 async fn handle_script_coverage(
     sd: &HashMap<String, Statement>,
     sc: &ScriptCoverage,
@@ -65,7 +65,8 @@ async fn handle_script_coverage(
     let statement = match sd.get(&sc.url) {
         Some(s) => s,
         None => {
-            return Err(anyhow!("未找到覆盖率数据 {}", &sc.url));
+            warn!("未找到覆盖率数据");
+            return Ok(HashMap::new());
         }
     };
     let root = Rc::new(RefCell::new(CoverRangeNode::new(&CoverageRange {

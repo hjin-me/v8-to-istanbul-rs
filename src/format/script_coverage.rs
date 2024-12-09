@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
-use tracing::{info, trace, warn};
+use tracing::{debug, info, instrument, warn};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScriptCoverageRaw {
@@ -176,7 +176,7 @@ pub fn url_filename(u: &str) -> String {
     let s = u.split("?").next().unwrap_or_default();
     s.split("/").last().unwrap_or_default().to_string()
 }
-
+#[instrument]
 pub async fn collect_coverage_helper(
     path_pattern: &str,
     coverage_filters: &Vec<String>,
@@ -188,7 +188,7 @@ pub async fn collect_coverage_helper(
     );
     let mut all_script_coverages = HashMap::new();
     for p in all_script_coverage_files {
-        trace!("处理文件 {}", p.to_str().unwrap());
+        debug!("处理覆盖率文件 {}", p.to_str().unwrap());
         let s = std::fs::read_to_string(&p)?;
         let sc_arr: Vec<ScriptCoverageRaw> =
             serde_json::from_str(&s).map_err(|e| anyhow!("解析{:?}出错, {}", p.to_str(), e))?;

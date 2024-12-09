@@ -9,7 +9,7 @@ use sourcemap::SourceMap;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, info, instrument, trace, warn};
 use url::Url;
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ pub struct Statement {
     pub mapping: Vec<MappingItem>,
 }
 
-#[instrument()]
+#[instrument]
 pub async fn build_statements_from_local(
     source_map_pattern: &str,
     url_base: &Option<String>,
@@ -28,6 +28,7 @@ pub async fn build_statements_from_local(
 ) -> Result<HashMap<String, Statement>> {
     let mut cache_data = HashMap::new();
     let all_source_map_files = crate::glob_abs(source_map_pattern)?;
+    info!("待处理的SourceMap文件列表 {:?}", &all_source_map_files);
     for p in all_source_map_files {
         trace!(file = p.to_str().unwrap(), "处理SourceMap文件");
         let sm = source_map_from_file(&p, source_relocate).await?;
@@ -37,7 +38,7 @@ pub async fn build_statements_from_local(
             sm.get_file().unwrap_or_default().to_string()
         };
 
-        trace!(
+        debug!(
             file = p.to_str().unwrap(),
             script_url = &script_url,
             "下载SourceMap对应的JS文件"
@@ -53,7 +54,7 @@ pub async fn build_statements_from_local(
 
         let source_content = resp.text().await?;
 
-        trace!(file = p.to_str().unwrap(), "生成中间文件");
+        debug!(file = p.to_str().unwrap(), "生成map中间文件");
         let vm = source_map_link(&source_content, &sm)
             .await
             .map_err(|e| anyhow!("生成覆盖率中间数据失败, {}", e))?;
@@ -104,7 +105,7 @@ pub async fn build_statements(
     Ok(cache_data)
 }
 
-#[instrument()]
+#[instrument]
 async fn source_map_from_file<P: AsRef<Path> + fmt::Debug>(
     p: P,
     source_relocate: &Option<(Regex, String)>,

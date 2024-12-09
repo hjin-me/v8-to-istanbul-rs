@@ -6,7 +6,7 @@ use anyhow::{anyhow, Result};
 use clap::Args;
 use std::collections::HashMap;
 use tokio::fs;
-use tracing::{error, info, trace, warn};
+use tracing::{error, info, instrument, trace, warn};
 
 #[derive(Args)]
 pub struct ConvertArgs {
@@ -23,6 +23,7 @@ pub struct ConvertArgs {
     #[arg(long)]
     source_relocate: Option<String>, // 用来替换 source map 里面 sources 的路径
 }
+#[instrument(skip(args))]
 pub async fn exec(args: &ConvertArgs) -> Result<()> {
     info!("开干");
     // 先处理输入参数
@@ -54,7 +55,7 @@ pub async fn exec(args: &ConvertArgs) -> Result<()> {
     let mut merged_result: HashMap<String, IstanbulCov> = HashMap::new();
     // 创建空覆盖率报告
     all_script_coverages.insert(
-        "empty_report".to_string(),
+        "默认空覆盖率".to_string(),
         statement_data
             .iter()
             .map(|(k, _)| ScriptCoverage {
@@ -66,9 +67,8 @@ pub async fn exec(args: &ConvertArgs) -> Result<()> {
     );
 
     for (test_name, sc_arr) in all_script_coverages {
-        // let test_name_hash = hash(&test_name);
         for sc in sc_arr {
-            info!("处理脚本: {} {}", test_name, sc.url);
+            info!(test_name = test_name, url = sc.url, "关联ScriptCoverage");
             match handle_script_coverage(&statement_data, &sc).await {
                 Ok(report) => {
                     trace!("执行 nyc 生成报告");
@@ -84,7 +84,7 @@ pub async fn exec(args: &ConvertArgs) -> Result<()> {
                         }
                     }
                 }
-                Err(e) => error!("{}", e),
+                Err(e) => error!("处理ScriptCoverage出错了:{}", e),
             };
         }
     }

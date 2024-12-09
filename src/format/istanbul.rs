@@ -5,7 +5,7 @@ use sourcemap::SourceMap;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tokio::fs;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct IstanbulCov {
@@ -83,6 +83,7 @@ pub async fn generate_source_code(source_map: &SourceMap, output_dir: &str) -> R
     Ok(())
 }
 
+#[instrument]
 pub fn from(vs: &Vec<MappingItem>, base_dir: &str) -> HashMap<String, IstanbulCov> {
     let base = Path::new(base_dir);
     let mut m = HashMap::new();

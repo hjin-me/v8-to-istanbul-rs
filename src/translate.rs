@@ -5,7 +5,7 @@ use sourcemap::SourceMap;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::Path;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 #[instrument(skip(source_content, source_map))]
 pub async fn source_map_link<'a>(
@@ -23,7 +23,6 @@ pub async fn source_map_link<'a>(
         if !is_legal_source_path(s) {
             continue;
         }
-        debug!("source path = {}", s);
         line_length_map.insert(
             s,
             source_map
