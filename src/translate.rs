@@ -227,6 +227,8 @@ pub async fn source_map_link<'a>(
                         while prev_i >= start_line as usize && lines_length[prev_i] == 0 {
                             prev_i -= 1;
                         }
+                        sector_map[*idx].original_line = sector_map[*idx].original_line + 1;
+                        sector_map[*idx].original_column = 0;
                         sector_map[*idx].last_original_line = prev_i as u32;
                         sector_map[*idx].last_original_column = lines_length[prev_i] - 1;
                     }

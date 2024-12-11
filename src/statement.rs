@@ -57,7 +57,7 @@ pub async fn build_statements_from_local(
         debug!(file = p.to_str().unwrap(), "生成map中间文件");
         let vm = source_map_link(&source_content, &sm)
             .await
-            .map_err(|e| anyhow!("生成覆盖率中间数据失败, {}", e))?;
+            .map_err(|e| anyhow!("生成覆盖率中间数据失败: {}", e))?;
         let script_name = crate::format::script_coverage::url_filename(&script_url);
         cache_data.insert(
             script_name,
