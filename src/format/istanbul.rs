@@ -50,8 +50,8 @@ struct BranchMap {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StatementMap {
-    pub start: Position,
-    pub end: Position,
+    start: Position,
+    end: Position,
 }
 
 // nyc 生成覆盖率报告需要源代码

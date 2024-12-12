@@ -1,10 +1,19 @@
+use crate::format::istanbul;
 use crate::format::istanbul::IstanbulCov;
-use crate::format::script_coverage::{collect_coverage_helper, ScriptCoverage};
-use crate::statement::build_statements_from_local;
-use crate::{handle_script_coverage, path_to_abs, relocate};
+use crate::format::script_coverage::{
+    build_coverage_range_tree, collect_coverage_helper, find_root_value_only, read_only,
+    CoverRangeNode, CoverageRange, ScriptCoverage,
+};
+use crate::fputil::path_to_abs;
+use crate::statement::{build_statements_from_local, Statement};
+use crate::timer::Timer;
 use anyhow::{anyhow, Result};
 use clap::Args;
+use rayon::prelude::*;
+use regex::Regex;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use tokio::fs;
 use tracing::{error, info, instrument, trace, warn};
 
@@ -69,7 +78,7 @@ pub async fn exec(args: &ConvertArgs) -> Result<()> {
     for (test_name, sc_arr) in all_script_coverages {
         for sc in sc_arr {
             info!(test_name = test_name, url = sc.url, "关联ScriptCoverage");
-            match handle_script_coverage(&statement_data, &sc).await {
+            match handle_script_coverage(&statement_data, &sc) {
                 Ok(report) => {
                     trace!("执行 nyc 生成报告");
                     for (k, v) in report {
@@ -96,4 +105,75 @@ pub async fn exec(args: &ConvertArgs) -> Result<()> {
         .map_err(|e| anyhow!("写入报告失败 [{}] {}", &d, e))?;
     info!("搞定");
     Ok(())
+}
+
+#[instrument(skip_all, fields(script = sc.url))]
+fn handle_script_coverage(
+    sd: &HashMap<String, Statement>,
+    sc: &ScriptCoverage,
+) -> Result<HashMap<String, IstanbulCov>> {
+    let _timer = Timer::new("生成覆盖率报告");
+    let statement = match sd.get(&sc.url) {
+        Some(s) => s,
+        None => {
+            warn!("未找到覆盖率数据");
+            return Ok(HashMap::new());
+        }
+    };
+    let root = Rc::new(RefCell::new(CoverRangeNode::new(&CoverageRange {
+        start_offset: 0,
+        end_offset: sc.source.len() as u32,
+        count: 0,
+    })));
+    trace!("构造覆盖率搜索树");
+    build_coverage_range_tree(root.clone(), &sc.functions);
+    let cov_tree = read_only(root);
+    trace!("搜索覆盖率");
+    let vm = statement
+        .mapping
+        .par_iter()
+        .map(|m| {
+            let mut m = m.clone();
+            if let Some(n) = find_root_value_only(
+                &cov_tree,
+                &CoverageRange {
+                    start_offset: m.generated_column,
+                    end_offset: m.last_generated_column,
+                    count: 0,
+                },
+            ) {
+                m.count = n;
+            }
+            m
+        })
+        .collect();
+    trace!("搜索覆盖率完成");
+
+    trace!("生成istanbul报告");
+    let report = istanbul::from(&vm, &statement.code_dir);
+    Ok(report)
+}
+fn relocate(pattern: &str) -> Result<(Regex, String)> {
+    if pattern.is_empty() {
+        return Err(anyhow!("pattern is empty"));
+    }
+    if let Some(first_char) = pattern.chars().next() {
+        let mut s = pattern.split(first_char);
+        s.next().ok_or(anyhow!("第一段字符串找不到"))?;
+        let reg = s.next().unwrap_or_default();
+        let replace = s.next().unwrap_or_default();
+        let re = Regex::new(reg)?;
+        Ok((re, replace.to_string()))
+    } else {
+        Err(anyhow!("pattern is empty"))
+    }
+}
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_relocate() {
+        dbg!(relocate(r"%webpack://%%").unwrap());
+    }
 }

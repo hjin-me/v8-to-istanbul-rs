@@ -1,4 +1,6 @@
+use crate::fputil::glob_abs;
 use crate::statement::url_normalize;
+use crate::timer::Timer;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::cell::RefCell;
@@ -64,10 +66,12 @@ impl CoverRangeNode {
     }
 }
 
+#[instrument(skip_all)]
 pub fn build_coverage_range_tree(
     root: Rc<RefCell<CoverRangeNode>>,
     script_fn_cov: &Vec<FunctionCoverage>,
 ) {
+    let _timer = Timer::new("构造覆盖率搜索树");
     let mut ranges = Vec::new();
     for x in script_fn_cov {
         for x in x.ranges.iter() {
@@ -181,7 +185,8 @@ pub async fn collect_coverage_helper(
     path_pattern: &str,
     coverage_filters: &Vec<String>,
 ) -> Result<HashMap<String, Vec<ScriptCoverage>>> {
-    let all_script_coverage_files = crate::glob_abs(path_pattern)?;
+    let _timer = Timer::new("收集本地覆盖率数据");
+    let all_script_coverage_files = glob_abs(path_pattern)?;
     info!(
         "待处理的覆盖率报告文件列表 {:?}",
         &all_script_coverage_files

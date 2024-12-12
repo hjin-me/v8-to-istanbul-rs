@@ -1,6 +1,8 @@
 use crate::format::istanbul::generate_source_code;
 use crate::format::script_coverage::ScriptCoverage;
 use crate::format::MappingItem;
+use crate::fputil::glob_abs;
+use crate::timer::Timer;
 use crate::translate::source_map_link;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -26,8 +28,9 @@ pub async fn build_statements_from_local(
     project_dir: &str,
     source_relocate: &Option<(Regex, String)>,
 ) -> Result<HashMap<String, Statement>> {
+    let _timer = Timer::new("本地构造Statements");
     let mut cache_data = HashMap::new();
-    let all_source_map_files = crate::glob_abs(source_map_pattern)?;
+    let all_source_map_files = glob_abs(source_map_pattern)?;
     info!("待处理的SourceMap文件列表 {:?}", &all_source_map_files);
     for p in all_source_map_files {
         trace!(file = p.to_str().unwrap(), "处理SourceMap文件");
