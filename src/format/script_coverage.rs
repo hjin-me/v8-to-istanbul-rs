@@ -1,4 +1,4 @@
-use crate::fputil::glob_abs;
+use crate::fputil::{get_uri_resource, glob_abs};
 use crate::statement::url_normalize;
 use crate::timer::Timer;
 use anyhow::{anyhow, Result};
@@ -158,12 +158,7 @@ pub async fn normalize_script_coverages(
                     functions: sc.functions.clone(),
                 }
             } else {
-                let s = reqwest::get(&script_url)
-                    .await
-                    .map_err(|e| anyhow!("请求URL失败: {} {}", &script_url, e))?
-                    .text()
-                    .await
-                    .map_err(|e| anyhow!("请求URL失败: {} {}", &script_url, e))?;
+                let s = get_uri_resource(&script_url).await.map_err(|e| anyhow!("请求URL失败: {} {}", &script_url, e))?;
                 ScriptCoverage {
                     url: script_name,
                     source: s,

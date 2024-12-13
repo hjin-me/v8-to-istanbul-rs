@@ -1,7 +1,7 @@
 use crate::format::istanbul::generate_source_code;
 use crate::format::script_coverage::ScriptCoverage;
 use crate::format::MappingItem;
-use crate::fputil::glob_abs;
+use crate::fputil::{get_uri_resource, glob_abs};
 use crate::timer::Timer;
 use crate::translate::source_map_link;
 use anyhow::anyhow;
@@ -9,8 +9,9 @@ use anyhow::Result;
 use regex::Regex;
 use sourcemap::SourceMap;
 use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
-use std::{fmt, fs};
+use tokio::fs;
 use tracing::{debug, info, instrument, trace, warn};
 use url::Url;
 
@@ -33,46 +34,46 @@ pub async fn build_statements_from_local(
     let all_source_map_files = glob_abs(source_map_pattern)?;
     info!("待处理的SourceMap文件列表 {:?}", &all_source_map_files);
     for p in all_source_map_files {
-        trace!(file = p.to_str().unwrap(), "处理SourceMap文件");
-        let sm = source_map_from_file(&p, source_relocate).await?;
-        let script_url = if let Some(ub) = url_base {
-            format!("{}{}", ub, sm.get_file().unwrap_or_default())
-        } else {
-            sm.get_file().unwrap_or_default().to_string()
-        };
-
-        debug!(
-            file = p.to_str().unwrap(),
-            script_url = &script_url,
-            "下载SourceMap对应的JS文件"
-        );
-        let resp = reqwest::get(&script_url).await?;
-        if !resp.status().is_success() {
-            return Err(anyhow!(
-                "获取JS源码错误, [{}]{}",
-                resp.status(),
-                &script_url
-            ));
-        }
-
-        let source_content = resp.text().await?;
-
-        debug!(file = p.to_str().unwrap(), "生成map中间文件");
-        let vm = source_map_link(&source_content, &sm)
-            .await
-            .map_err(|e| anyhow!("生成覆盖率中间数据失败: {}", e))?;
-        let script_name = crate::format::script_coverage::url_filename(&script_url);
-        cache_data.insert(
-            script_name,
-            Statement {
-                source_url: script_url,
-                code_dir: project_dir.to_string(),
-                mapping: vm,
-            },
-        );
+        let (script_name, statement) =
+            handle_sourcemap_file(p.to_str().unwrap(), url_base, project_dir, source_relocate)
+                .await?;
+        cache_data.insert(script_name, statement);
     }
 
     Ok(cache_data)
+}
+#[instrument(skip_all, fields(file=p))]
+async fn handle_sourcemap_file(
+    p: &str,
+    uri_base: &Option<String>,
+    project_dir: &str,
+    source_relocate: &Option<(Regex, String)>,
+) -> Result<(String, Statement)> {
+    let _timer = Timer::new("处理SourceMap文件");
+    trace!("处理SourceMap文件");
+    let sm = source_map_from_file(&p, source_relocate).await?;
+    let script_uri = if let Some(ub) = uri_base {
+        format!("{}{}", ub, sm.get_file().unwrap_or_default())
+    } else {
+        sm.get_file().unwrap_or_default().to_string()
+    };
+
+    debug!(script_uri = &script_uri, "下载SourceMap对应的JS文件");
+    let source_content = get_uri_resource(&script_uri).await?;
+
+    debug!("生成map中间文件");
+    let vm = source_map_link(&source_content, &sm)
+        .await
+        .map_err(|e| anyhow!("生成覆盖率中间数据失败: {}", e))?;
+    let script_name = crate::format::script_coverage::url_filename(&script_uri);
+    Ok((
+        script_name,
+        Statement {
+            source_url: script_uri,
+            code_dir: project_dir.to_string(),
+            mapping: vm,
+        },
+    ))
 }
 
 pub async fn build_statements(
@@ -113,7 +114,7 @@ async fn source_map_from_file<P: AsRef<Path> + fmt::Debug>(
     p: P,
     source_relocate: &Option<(Regex, String)>,
 ) -> Result<SourceMap> {
-    let s = fs::read_to_string(&p).map_err(|err| {
+    let s = fs::read_to_string(&p).await.map_err(|err| {
         anyhow!(
             "读取SourceMap失败: {}, {}",
             err,
@@ -141,7 +142,7 @@ async fn source_map_from_url(
     u: &str,
     source_relocate: Option<(Regex, String)>,
 ) -> Result<SourceMap> {
-    let s = reqwest::get(u).await?.text().await?;
+    let s = get_uri_resource(u).await?;
     trace!("解码 source map");
     let mut sm =
         SourceMap::from_slice(s.as_bytes()).map_err(|e| anyhow!("sourcemap 解析失败: {}", e))?;
@@ -179,7 +180,9 @@ async fn gen_cache_data<'a>(
     };
     // source map 可以从网络下载，或者本地查找
     let smb = match sm_path {
-        Some(s) => fs::read_to_string(&s).map_err(|e| anyhow!("读取 sourcemap 路径错误: {}", e))?,
+        Some(s) => fs::read_to_string(&s)
+            .await
+            .map_err(|e| anyhow!("读取 sourcemap 路径错误: {}", e))?,
         None => reqwest::get(&format!("{}.map", &url)).await?.text().await?,
     };
 
@@ -247,7 +250,7 @@ fn get_js_filename(u: &str, source_map_base: &str) -> Option<String> {
     // 获取最后一个路径段作为文件名
     if let Some(filename) = path_segments.last() {
         path.push(format!("{}.map", filename));
-        if fs::metadata(&path).is_ok() {
+        if std::fs::metadata(&path).is_ok() {
             debug!("文件名: {}", path.to_string_lossy().to_string());
             return Some(path.to_string_lossy().to_string());
         }

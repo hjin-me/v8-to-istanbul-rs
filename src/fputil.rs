@@ -1,12 +1,15 @@
 use crate::format::path_normalize;
-use anyhow::anyhow;
+use crate::timer::Timer;
+use anyhow::{anyhow, Result};
 use glob::glob;
 use regex::Regex;
 use sha1::{Digest, Sha1};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tokio::fs;
 use tracing::{instrument, trace};
+use url::Url;
 
 const NOT_EXIST_DIR: &'static str = "/abc/def/xyz/817457891234/";
 #[instrument]
@@ -70,9 +73,30 @@ pub fn hash(s: &str) -> String {
     // Convert the result to a hexadecimal string
     hex::encode(result)
 }
+
+#[instrument]
+pub async fn get_uri_resource(uri: &str) -> Result<String> {
+    let _timer = Timer::new(&format!("获取资源{}", uri));
+    let u = Url::parse(uri)?;
+    match u.scheme() {
+        "file" => {
+            let p = PathBuf::from(u.path());
+            Ok(fs::read_to_string(p).await?)
+        }
+        "https" | "http" => {
+            let resp = reqwest::get(uri).await?;
+            if !resp.status().is_success() {
+                return Err(anyhow!("请求远程资源失败: [http={}]{}", resp.status(), &uri));
+            }
+            Ok(resp.text().await?)
+        }
+        _ => Err(anyhow!("unsupported scheme: {}", u.scheme())),
+    }
+}
 #[cfg(test)]
 mod test {
     use super::*;
+    use url::Url;
 
     #[test]
     fn test_key() {
@@ -88,5 +112,12 @@ mod test {
             glob_abs("tests/base/**/*.json").unwrap(),
             glob_abs(&format!("{}/tests/base/**/*.json", cwd.to_str().unwrap())).unwrap()
         );
+    }
+    #[test]
+    fn test_url() {
+        dbg!(Url::parse("file://user/local/abc"));
+        dbg!(Url::parse("https://wer.com/asdf.jasd"));
+        dbg!(Url::parse("ftp://asdfjkl.zxjcvklasdf/asdjfkl"));
+        dbg!(Url::parse("//asdfjkl.zxjcvklasdf/asdjfkl"));
     }
 }
